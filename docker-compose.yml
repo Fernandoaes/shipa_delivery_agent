@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: shipa
+      POSTGRES_PASSWORD: shipa
+      POSTGRES_DB: shipa
+    ports:
+      - "5432:5432"
+    volumes:
+      - shipa_pg:/var/lib/postgresql/data
+volumes:
+  shipa_pg:
