@@ -18,8 +18,10 @@ These are the spine of the design. Every endpoint and service is built around th
 2. **OTP discipline.** The `otp_code` is treated as a secret. It is never returned by dashboard read endpoints, never written to stored transcripts (scrubbed where present), and only returned to the agent through a tightly scoped path for a *verified* caller. It is never sent over the SMS/WhatsApp fallback channel.
 3. **PII minimization.** `full_name`, `primary_phone`, `delivery_address` are restricted in API responses to the minimum the caller-facing flow needs. Dashboard reads expose only what ops needs to action a queue.
 4. **Attempt capping.** Verification is capped at 3 attempts per call; the 4th triggers an automatic escalation with category `verification_failed`. This prevents brute-forcing the verification gate over a single call.
-5. **Authenticated endpoints.** Tool endpoints require a webhook shared secret; dashboard endpoints require an API key. No endpoint is open to the world.
+5. **Authenticated endpoints.** Tool + ingest endpoints require a webhook shared secret (constant-time compared, applied at the router level so every route inherits it); dashboard endpoints require an API key. No endpoint is open to the world. Note: `POST /calls/{id}/disposition` is intentionally *not* verification-gated (a failed-verification call must still log its outcome), but it is still webhook-authenticated — a regression test pins this so a refactor can't silently expose it.
 6. **Idempotency.** Agent retries during a live call must not create duplicate cases, reschedules, or escalations. Enforced at the database level.
+
+**Threat model / accepted scope (re: IDOR):** there is a single trusted webhook client — the HappyRobot platform — holding one shared secret, serving a single Shipa tenant, with unguessable UUID `call_id`s. There are no mutually-distrusting webhook clients, so per-client call-ownership scoping is out of scope for the pilot. If multiple distrusting integrations are ever added, disposition and the action endpoints would need call-to-client ownership checks.
 
 When a safety principle and a convenience trade off, safety wins. Where a control is deferred (see §8), it is deferred explicitly with a stated reason, never silently dropped.
 
