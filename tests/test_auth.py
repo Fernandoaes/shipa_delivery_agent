@@ -30,4 +30,5 @@ def test_api_key_required():
 
     c = TestClient(_app_with_protected_routes())
     assert c.get("/read").status_code == 401
+    assert c.get("/read", headers={"X-API-Key": "wrong"}).status_code == 401
     assert c.get("/read", headers={"X-API-Key": "dev-dashboard-key-change-me"}).status_code == 200
