@@ -5,8 +5,23 @@ from fastapi import status as http_status
 from sqlalchemy.orm import Session
 
 from app.deps import get_db, require_webhook_secret
+from app.schemas.actions import (
+    AddressFlagRequest,
+    AddressFlagResponse,
+    EscalateRequest,
+    EscalateResponse,
+    FallbackMessageRequest,
+    FallbackMessageResponse,
+    InvestigationRequest,
+    InvestigationResponse,
+    MerchantReferralRequest,
+    MerchantReferralResponse,
+    RescheduleRequest,
+    RescheduleResponse,
+)
 from app.schemas.orders import OrderStatusResponse
 from app.schemas.verify import OrderPublic, VerifyRequest, VerifyResponse
+from app.services import actions
 from app.services.calls import get_call, get_or_create_call
 from app.services.guard import VerificationRequired, require_verified_call
 from app.services.orders import get_order
@@ -56,3 +71,65 @@ def order_status(order_id: uuid.UUID, call=Depends(load_verified_call), db: Sess
         order_id=order.order_id, status=order.status,
         delivery_window=order.delivery_window, assigned_driver=order.assigned_driver,
     )
+
+
+def _require_order(db: Session, order_id: uuid.UUID):
+    order = get_order(db, order_id)
+    if order is None:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="order not found")
+    return order
+
+
+@router.post("/orders/{order_id}/reschedule", response_model=RescheduleResponse)
+def reschedule(order_id: uuid.UUID, payload: RescheduleRequest,
+               call=Depends(load_verified_call), db: Session = Depends(get_db)) -> RescheduleResponse:
+    _require_order(db, order_id)
+    row = actions.create_reschedule(db, call.call_id, order_id, payload.requested_date,
+                                    payload.requested_window, payload.reason)
+    db.commit()
+    return RescheduleResponse(reschedule_id=row.reschedule_id, status=row.status, requested_date=row.requested_date)
+
+
+@router.post("/orders/{order_id}/investigation", response_model=InvestigationResponse)
+def investigation(order_id: uuid.UUID, payload: InvestigationRequest,
+                  call=Depends(load_verified_call), db: Session = Depends(get_db)) -> InvestigationResponse:
+    _require_order(db, order_id)
+    row = actions.create_investigation(db, call.call_id, order_id, payload.type)
+    db.commit()
+    return InvestigationResponse(investigation_id=row.investigation_id, status=row.status, callback_due_at=row.callback_due_at)
+
+
+@router.post("/orders/{order_id}/merchant-referral", response_model=MerchantReferralResponse)
+def merchant_referral(order_id: uuid.UUID, payload: MerchantReferralRequest,
+                      call=Depends(load_verified_call), db: Session = Depends(get_db)) -> MerchantReferralResponse:
+    _require_order(db, order_id)
+    row = actions.create_merchant_referral(db, call.call_id, order_id, payload.reason)
+    db.commit()
+    return MerchantReferralResponse(referral_id=row.referral_id, status=row.status)
+
+
+@router.post("/orders/{order_id}/address-flag", response_model=AddressFlagResponse)
+def address_flag(order_id: uuid.UUID, payload: AddressFlagRequest,
+                 call=Depends(load_verified_call), db: Session = Depends(get_db)) -> AddressFlagResponse:
+    order = _require_order(db, order_id)
+    row = actions.create_address_flag(db, call.call_id, order, payload.correction_text)
+    db.commit()
+    return AddressFlagResponse(flag_id=row.flag_id, status=row.status)
+
+
+@router.post("/orders/{order_id}/escalate", response_model=EscalateResponse)
+def escalate(order_id: uuid.UUID, payload: EscalateRequest,
+             call=Depends(load_verified_call), db: Session = Depends(get_db)) -> EscalateResponse:
+    _require_order(db, order_id)
+    row = actions.create_escalation(db, call.call_id, order_id, payload.category, payload.reason)
+    db.commit()
+    return EscalateResponse(escalation_id=row.escalation_id, status=row.status)
+
+
+@router.post("/orders/{order_id}/fallback-message", response_model=FallbackMessageResponse)
+def fallback_message(order_id: uuid.UUID, payload: FallbackMessageRequest,
+                     call=Depends(load_verified_call), db: Session = Depends(get_db)) -> FallbackMessageResponse:
+    _require_order(db, order_id)
+    row = actions.create_fallback_message(db, call.call_id, order_id, payload.channel, payload.content_type)
+    db.commit()
+    return FallbackMessageResponse(message_id=row.message_id, status=row.status)
