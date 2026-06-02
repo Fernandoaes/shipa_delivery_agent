@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
@@ -10,7 +11,8 @@ from app.main import create_app
 # All models must be imported so Base.metadata is complete.
 import app.models  # noqa: F401
 
-TEST_DB_URL = settings.database_url.rsplit("/shipa", 1)[0] + "/shipa_test"
+_base_url = make_url(settings.database_url)
+TEST_DB_URL = _base_url.set(database=f"{_base_url.database}_test").render_as_string(hide_password=False)
 
 
 @pytest.fixture(scope="session")
@@ -34,7 +36,7 @@ def engine():
 
 @pytest.fixture()
 def db(engine):
-    TestSession = sessionmaker(bind=engine, expire_on_commit=False, future=True)
+    TestSession = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, future=True)
     session = TestSession()
     yield session
     session.rollback()
