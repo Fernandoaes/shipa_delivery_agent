@@ -8,6 +8,10 @@ def create_app() -> FastAPI:
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    from app.routers import tools
+
+    app.include_router(tools.router)
+
     return app
 
 
