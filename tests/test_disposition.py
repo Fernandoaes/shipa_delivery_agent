@@ -30,3 +30,10 @@ def test_disposition_scrubs_otp_from_transcript(client, verified):
                     json={"disposition": "resolved_info", "transcript": "your code is 4821 thanks"})
     assert r.status_code == 200
     assert "4821" not in r.json()["transcript"]
+
+
+def test_disposition_requires_webhook_secret(client, verified):
+    # Pins the router-level auth so a refactor can't silently expose this write endpoint.
+    cid = verified["call_id"]
+    r = client.post(f"/calls/{cid}/disposition", json={"disposition": "resolved_info"})
+    assert r.status_code == 401
