@@ -12,6 +12,10 @@ def create_app() -> FastAPI:
 
     app.include_router(tools.router)
 
+    from app.routers import dashboard
+
+    app.include_router(dashboard.router)
+
     return app
 
 
