@@ -37,3 +37,14 @@ def test_disposition_requires_webhook_secret(client, verified):
     cid = verified["call_id"]
     r = client.post(f"/calls/{cid}/disposition", json={"disposition": "resolved_info"})
     assert r.status_code == 401
+
+
+def test_disposition_is_one_per_call(client, verified):
+    cid = verified["call_id"]
+    client.post(f"/calls/{cid}/disposition", headers=HEADERS,
+                json={"disposition": "resolved_info", "csat_score": 5})
+    # a second, different disposition must NOT overwrite the first
+    second = client.post(f"/calls/{cid}/disposition", headers=HEADERS,
+                         json={"disposition": "escalated", "csat_score": 1}).json()
+    assert second["disposition"] == "resolved_info"
+    assert second["csat_score"] == 5

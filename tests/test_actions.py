@@ -1,7 +1,17 @@
+import datetime as dt
+
 import pytest
 
 from app.twin.mock import MockTwinClient
 from app.twin.sync import upsert_orders
+
+
+def _future_working_day(days_ahead: int = 7) -> str:
+    d = dt.date.today() + dt.timedelta(days=days_ahead)
+    while d.weekday() >= 5:  # bump Sat/Sun to Monday
+        d += dt.timedelta(days=1)
+    return d.isoformat()
+
 
 HEADERS = {"X-Webhook-Secret": "dev-webhook-secret-change-me"}
 
@@ -21,7 +31,7 @@ def _h(verified):
 
 def test_reschedule(client, verified):
     r = client.post(f"/orders/{verified['order_id']}/reschedule", headers=_h(verified),
-                    json={"requested_date": "2026-06-10", "requested_window": "09:00-12:00", "reason": "not home"})
+                    json={"requested_date": _future_working_day(), "requested_window": "09:00-12:00", "reason": "not home"})
     assert r.status_code == 200
     assert r.json()["status"] == "requested"
 
@@ -61,3 +71,20 @@ def test_fallback_never_carries_otp(client, verified):
     bad = client.post(f"/orders/{verified['order_id']}/fallback-message", headers=_h(verified),
                       json={"channel": "sms", "content_type": "otp"})
     assert bad.status_code == 422
+
+
+def test_reschedule_rejects_past_date(client, verified):
+    past = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+    r = client.post(f"/orders/{verified['order_id']}/reschedule", headers=_h(verified),
+                    json={"requested_date": past})
+    assert r.status_code == 422
+
+
+def test_reschedule_rejects_weekend(client, verified):
+    # find the next Saturday
+    d = dt.date.today() + dt.timedelta(days=1)
+    while d.weekday() != 5:
+        d += dt.timedelta(days=1)
+    r = client.post(f"/orders/{verified['order_id']}/reschedule", headers=_h(verified),
+                    json={"requested_date": d.isoformat()})
+    assert r.status_code == 422

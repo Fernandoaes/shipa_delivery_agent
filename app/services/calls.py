@@ -39,6 +39,8 @@ def get_call(db: Session, call_id: uuid.UUID) -> Call | None:
 
 def set_disposition(db, call, *, disposition, intent=None, csat_score=None,
                     transcript=None, notes=None, recording_url=None):
+    if call.disposition is not None:
+        return call  # one disposition per call; a repeat POST is a no-op
     otp = None
     if call.order_id:
         order = db.get(Order, call.order_id)
