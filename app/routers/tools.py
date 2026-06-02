@@ -5,6 +5,7 @@ from fastapi import status as http_status
 from sqlalchemy.orm import Session
 
 from app.deps import get_db, require_webhook_secret
+from app.schemas.calls import DispositionRequest, DispositionResponse
 from app.schemas.actions import (
     AddressFlagRequest,
     AddressFlagResponse,
@@ -22,7 +23,7 @@ from app.schemas.actions import (
 from app.schemas.orders import OrderStatusResponse
 from app.schemas.verify import OrderPublic, VerifyRequest, VerifyResponse
 from app.services import actions
-from app.services.calls import get_call, get_or_create_call
+from app.services.calls import get_call, get_or_create_call, set_disposition
 from app.services.guard import VerificationRequired, require_verified_call
 from app.services.orders import get_order
 from app.services.verification import VerifyInput, verify_caller
@@ -133,3 +134,18 @@ def fallback_message(order_id: uuid.UUID, payload: FallbackMessageRequest,
     row = actions.create_fallback_message(db, call.call_id, order_id, payload.channel, payload.content_type)
     db.commit()
     return FallbackMessageResponse(message_id=row.message_id, status=row.status)
+
+
+@router.post("/calls/{call_id}/disposition", response_model=DispositionResponse)
+def disposition(call_id: uuid.UUID, payload: DispositionRequest, db: Session = Depends(get_db)) -> DispositionResponse:
+    call = get_call(db, call_id)
+    if call is None:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="call not found")
+    set_disposition(db, call, disposition=payload.disposition, intent=payload.intent,
+                    csat_score=payload.csat_score, transcript=payload.transcript,
+                    notes=payload.notes, recording_url=payload.recording_url)
+    db.commit()
+    return DispositionResponse(
+        call_id=call.call_id, disposition=call.disposition, intent=call.intent,
+        csat_score=call.csat_score, transcript=call.transcript, ended_at=call.ended_at,
+    )

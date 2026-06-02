@@ -3,7 +3,8 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.models import Call
+from app.models import Call, Order
+from app.security import scrub_otp
 
 
 def _now() -> dt.datetime:
@@ -34,3 +35,20 @@ def get_or_create_call(
 
 def get_call(db: Session, call_id: uuid.UUID) -> Call | None:
     return db.get(Call, call_id)
+
+
+def set_disposition(db, call, *, disposition, intent=None, csat_score=None,
+                    transcript=None, notes=None, recording_url=None):
+    otp = None
+    if call.order_id:
+        order = db.get(Order, call.order_id)
+        otp = order.otp_code if order else None
+    call.disposition = disposition
+    call.intent = intent
+    call.csat_score = csat_score
+    call.transcript = scrub_otp(transcript, otp)   # safety: OTP out of stored transcript
+    call.notes = notes
+    call.recording_url = recording_url
+    call.ended_at = _now()
+    db.flush()
+    return call
