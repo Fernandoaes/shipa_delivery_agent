@@ -104,6 +104,8 @@ Models are grouped by role (read side / spine / operations) rather than one-file
 
 A `call` row is created at call start (`POST /calls` or implicit on first `/verify`) so every operational row can link back to it.
 
+**Order ingest — webhook shared-secret auth:** `POST /orders/sync` accepts one or more order records (shaped like the Twin feed) and runs the same upsert as the internal sync path (see §8). This lets the HappyRobot platform — or any source — *push* order data into the backend, as an alternative to the backend *pulling* from Twin. The mechanism is still being decided; exposing the endpoint keeps both options open without changing business logic.
+
 **Dashboard reads — API-key auth:** `GET /calls`, `GET /investigations`, `GET /reschedules`, `GET /escalations`, `GET /metrics` (first-attempt rate, call-deflection rate, CSAT, average handle time). All read responses are filtered through the OTP/PII rules in §2.
 
 `/reattempt` from the full contract is omitted as an endpoint (it's the outbound driver-no-contact path), but `re_attempt_scheduled` remains a valid disposition enum value.
@@ -129,7 +131,11 @@ Each action table (`reschedules`, `investigations`, `escalations`, `address_flag
 
 ## 8. Twin, security, deferrals
 
-- **Twin adapter:** `TwinClient` Protocol + `MockTwinClient` seeded with realistic orders (Amazon/Temu/Trendyol; statuses across the enum; OTPs; emirate areas; expected pieces). `sync.py` upserts `orders` on `twin_order_ref` and derives `customers` (dedupe on phone). The real client implements the same Protocol later with zero service changes. For OTP and status the design assumes a **live pull at call start** so the agent never reads a stale code; the mock simulates this.
+- **Order source is source-agnostic.** `sync.py` owns one upsert path: `orders` on `twin_order_ref`, `customers` deduped on phone. It is fed by whichever source we land on, all interchangeable:
+  - **Pull:** a `TwinClient` Protocol + `MockTwinClient` (pilot, seeded with realistic orders — Amazon/Temu/Trendyol; statuses across the enum; OTPs; emirate areas; expected pieces). A real Twin client implements the same Protocol later with zero service changes.
+  - **Push:** the `POST /orders/sync` ingest endpoint (§5), so the HappyRobot platform or another system can push order records in. Same upsert, same validation.
+  - The mechanism (pull vs push vs both) is an **open decision** — the user is still figuring out whether to populate via a platform endpoint or a Twin pull. The design deliberately does not force the choice now.
+  - For OTP and status the design *prefers* a **live read at call start** so the agent never acts on a stale code; the mock simulates this, and a push model would need a freshness story before go-live.
 - **Auth:** `WEBHOOK_SECRET` (constant-time compare) for tool endpoints; `DASHBOARD_API_KEY` for reads. Both via `deps.py`.
 - **OTP/PII filtering:** response models for dashboard reads exclude `otp_code` and minimize PII; a transcript-scrub helper strips OTP patterns before persistence.
 - **Explicitly deferred (with reasons), not dropped:**
