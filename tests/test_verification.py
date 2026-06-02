@@ -65,3 +65,16 @@ def test_each_attempt_is_recorded(seeded):
     v = seeded.query(Verification).filter_by(call_id=call.call_id).one()
     assert v.attempt_no == 1
     assert "order_ref" in v.factors_checked
+
+
+def test_repeated_failures_past_cap_do_not_crash(seeded):
+    from app.models import Escalation
+
+    call = _call(seeded)
+    # Six consecutive failed attempts — well past the cap of 3.
+    last = None
+    for _ in range(6):
+        last = verify_caller(seeded, call, VerifyInput(order_ref="NOPE", name="Nobody"))
+    assert last.escalated is True
+    # Exactly one escalation row despite many over-cap attempts.
+    assert seeded.query(Escalation).filter_by(call_id=call.call_id).count() == 1

@@ -14,7 +14,7 @@ class VerifyInput:
     order_ref: str | None = None
     registered_phone: str | None = None
     delivery_area: str | None = None
-    item: str | None = None
+    item: str | None = None  # accepted from the agent but not yet a scored factor
 
 
 @dataclass
@@ -30,6 +30,9 @@ def _now() -> dt.datetime:
 
 
 def _candidate_order(db: Session, data: VerifyInput) -> Order | None:
+    # Full scan + refs_match/names_match because matching normalizes away case and
+    # separators (e.g. "TWIN 1" == "TWIN-1001"-style), which a plain indexed equality
+    # can't replicate. Fine for pilot scale; revisit with a normalized column before prod.
     if data.order_ref:
         for o in db.query(Order).all():
             if refs_match(o.twin_order_ref, data.order_ref):
@@ -41,7 +44,12 @@ def _candidate_order(db: Session, data: VerifyInput) -> Order | None:
                 cust = c
                 break
         if cust:
-            order = db.query(Order).filter_by(customer_id=cust.customer_id).first()
+            order = (
+                db.query(Order)
+                .filter_by(customer_id=cust.customer_id)
+                .order_by(Order.last_synced_at.desc())
+                .first()
+            )
             if order:
                 return order
     return None
@@ -98,11 +106,14 @@ def verify_caller(db: Session, call: Call, data: VerifyInput) -> VerifyResult:
         call.order_id = order.order_id
         call.customer_id = order.customer_id
     elif attempt_no > settings.verification_max_attempts:
-        # Safety: cap attempts, hand to a human.
-        db.add(Escalation(
-            call_id=call.call_id, category="verification_failed",
-            reason="exceeded verification attempt cap", status="open", created_at=_now(),
-        ))
+        # Safety: cap attempts, hand to a human. Idempotent — a caller who keeps
+        # guessing past the cap must not crash on the unique escalations.call_id.
+        already = db.query(Escalation).filter_by(call_id=call.call_id).one_or_none()
+        if already is None:
+            db.add(Escalation(
+                call_id=call.call_id, category="verification_failed",
+                reason="exceeded verification attempt cap", status="open", created_at=_now(),
+            ))
         escalated = True
 
     db.flush()
