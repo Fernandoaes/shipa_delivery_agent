@@ -18,3 +18,9 @@ def test_names_match_tolerates_minor_stt_error():
 def test_names_match_token_subset():
     # caller gives first name only
     assert names_match("Aisha Khan", "aisha") is True
+
+
+def test_names_match_short_tokens_require_exact():
+    # 2-char tokens must match exactly; fuzzy tolerance must not apply.
+    assert names_match("Al Khan", "al khan") is True       # exact short tokens ok
+    assert names_match("Al Khan", "az khan") is False       # 'az' != 'al', too short to fuzz

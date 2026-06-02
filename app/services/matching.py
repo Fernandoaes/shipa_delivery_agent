@@ -21,7 +21,7 @@ def refs_match(a: str | None, b: str | None) -> bool:
 
 
 def _levenshtein(a: str, b: str) -> int:
-    """Damerau-Levenshtein: counts adjacent transpositions as 1 edit."""
+    """Optimal String Alignment distance (restricted Damerau-Levenshtein): adjacent transposition counts as one edit."""
     if a == b:
         return 0
     m, n = len(a), len(b)
@@ -35,7 +35,7 @@ def _levenshtein(a: str, b: str) -> int:
             cost = 0 if a[i - 1] == b[j - 1] else 1
             d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
             if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
-                d[i][j] = min(d[i][j], d[i - 2][j - 2] + cost)
+                d[i][j] = min(d[i][j], d[i - 2][j - 2] + 1)
     return d[m][n]
 
 
@@ -45,8 +45,15 @@ def names_match(stored: str | None, spoken: str | None) -> bool:
     if not s_norm or not k_norm:
         return False
     s_tokens, k_tokens = set(s_norm.split()), set(k_norm.split())
-    # Every spoken token is close to some stored token (covers first-name-only + typos).
     for kt in k_tokens:
-        if not any(_levenshtein(kt, st) <= 1 for st in s_tokens):
+        matched = False
+        for st in s_tokens:
+            if kt == st:
+                matched = True
+                break
+            if len(kt) >= 3 and len(st) >= 3 and _levenshtein(kt, st) <= 1:
+                matched = True
+                break
+        if not matched:
             return False
     return True
