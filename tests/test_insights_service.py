@@ -42,7 +42,7 @@ def test_intent_and_disposition_mix(db):
 
 def test_needs_attention_counts(db):
     order = _seed(db)
-    call = db.query(Call).first()
+    call = db.query(Call).order_by(Call.started_at.desc()).first()
     db.add(Escalation(call_id=call.call_id, order_id=order.order_id, category="dispute",
                       status="open", created_at=dt.datetime.now()))
     db.add(Reschedule(call_id=call.call_id, order_id=order.order_id,
@@ -57,10 +57,21 @@ def test_needs_attention_counts(db):
 
 
 def test_map_points_only_active_with_coords(db):
-    order = _seed(db)
-    order.status = "delivered"  # terminal -> excluded
-    order.delivery_lat, order.delivery_lng = 25.1, 55.2
+    _seed(db)
+    order_with_coords = db.query(Order).filter_by(twin_order_ref="TWIN-1001").one()
+    order_no_coords = db.query(Order).filter_by(twin_order_ref="TWIN-1003").one()
+
+    order_with_coords.status = "out_for_delivery"
+    order_with_coords.delivery_lat, order_with_coords.delivery_lng = 25.1, 55.2
+
+    order_no_coords.status = "out_for_delivery"
+    order_no_coords.delivery_lat, order_no_coords.delivery_lng = None, None
+
     db.flush()
     out = compute_insights(db)
+
+    refs = {p["twin_order_ref"] for p in out["map_points"]}
+    assert order_with_coords.twin_order_ref in refs     # coords present -> included
+    assert order_no_coords.twin_order_ref not in refs   # coords absent -> excluded
     assert all(p["status"] in ("out_for_delivery", "pending", "failed", "rescheduled")
                for p in out["map_points"])

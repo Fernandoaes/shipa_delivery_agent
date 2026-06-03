@@ -11,6 +11,7 @@ _ACTIVE_STATUSES = ("out_for_delivery", "pending", "failed", "rescheduled")
 def compute_insights(db: Session) -> dict:
     calls = db.query(Call).all()
 
+    # Day bucketing uses the server clock (UTC in deployment), matching stored started_at and the compute_metrics convention.
     today = dt.date.today()
     start = today - dt.timedelta(days=13)
     per_day: dict[dt.date, int] = {start + dt.timedelta(days=i): 0 for i in range(14)}
