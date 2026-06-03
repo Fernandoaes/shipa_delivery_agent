@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     webhook_secret: str = "dev-webhook-secret-change-me"
     dashboard_api_key: str = "dev-dashboard-key-change-me"
     verification_max_attempts: int = 3
+    frontend_origin: str = "http://localhost:3000"
 
     @field_validator("database_url")
     @classmethod
