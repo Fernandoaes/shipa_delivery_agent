@@ -1,8 +1,13 @@
 import type {
+  CallSummary,
   CustomerDetail,
   CustomerListItem,
+  EscalationSummary,
+  InvestigationSummary,
+  Metrics,
   OrderDetail,
   OrderListItem,
+  RescheduleSummary,
 } from "@/lib/types";
 
 const BASE = process.env.API_BASE_URL ?? "http://localhost:8000";
@@ -19,6 +24,11 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export const getCalls = () => get<CallSummary[]>("/calls");
+export const getReschedules = () => get<RescheduleSummary[]>("/reschedules");
+export const getInvestigations = () => get<InvestigationSummary[]>("/investigations");
+export const getEscalations = () => get<EscalationSummary[]>("/escalations");
+export const getMetrics = () => get<Metrics>("/metrics");
 export const getOrders = () => get<OrderListItem[]>("/orders");
 export const getOrder = (id: string) => get<OrderDetail>(`/orders/${id}`);
 export const getCustomers = () => get<CustomerListItem[]>("/customers");

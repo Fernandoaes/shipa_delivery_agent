@@ -1,3 +1,50 @@
+export type CallSummary = {
+  call_id: string;
+  direction: string;
+  language: string | null;
+  verification_status: string;
+  intent: string | null;
+  disposition: string | null;
+  csat_score: number | null;
+  started_at: string;
+  ended_at: string | null;
+};
+
+export type RescheduleSummary = {
+  reschedule_id: string;
+  call_id: string;
+  order_id: string;
+  requested_date: string;
+  status: string;
+  synced_to_twin_at: string | null;
+};
+
+export type InvestigationSummary = {
+  investigation_id: string;
+  call_id: string;
+  order_id: string;
+  type: string;
+  status: string;
+  callback_due_at: string | null;
+  opened_at: string;
+};
+
+export type EscalationSummary = {
+  escalation_id: string;
+  call_id: string;
+  category: string;
+  status: string;
+  created_at: string;
+};
+
+export type Metrics = {
+  total_calls: number;
+  first_attempt_rate: number;
+  deflection_rate: number;
+  avg_csat: number | null;
+  avg_handle_time_seconds: number | null;
+};
+
 export type OrderListItem = {
   order_id: string;
   twin_order_ref: string;

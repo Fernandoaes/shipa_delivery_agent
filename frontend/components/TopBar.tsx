@@ -7,6 +7,10 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/orders", label: "Orders" },
   { href: "/customers", label: "Customers" },
+  { href: "/calls", label: "Calls" },
+  { href: "/reschedules", label: "Reschedules" },
+  { href: "/investigations", label: "Investigations" },
+  { href: "/escalations", label: "Escalations" },
 ];
 
 export default function TopBar() {

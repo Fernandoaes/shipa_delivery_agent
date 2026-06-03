@@ -6,6 +6,8 @@ const STYLES: Record<string, string> = {
   rescheduled: "bg-slate-100 text-slate-700",
   returned: "bg-slate-100 text-slate-700",
   cancelled: "bg-slate-100 text-slate-700",
+  passed: "bg-green-100 text-green-800",
+  partial: "bg-amber-100 text-amber-800",
 };
 
 export default function StatusBadge({ status }: { status: string }) {
