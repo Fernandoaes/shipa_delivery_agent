@@ -111,3 +111,41 @@ class CustomerDetail(BaseModel):
     primary_phone: str
     language_pref: str | None
     orders: list[OrderListItem]
+
+
+class DayCount(BaseModel):
+    date: dt.date
+    count: int
+
+
+class IntentCount(BaseModel):
+    intent: str
+    count: int
+
+
+class DispositionCount(BaseModel):
+    disposition: str
+    count: int
+
+
+class NeedsAttention(BaseModel):
+    open_escalations: int
+    pending_reschedules: int
+    failed_orders: int
+
+
+class MapPoint(BaseModel):
+    order_id: uuid.UUID
+    twin_order_ref: str
+    status: str
+    delivery_area: str | None
+    delivery_lat: float
+    delivery_lng: float
+
+
+class Insights(BaseModel):
+    calls_per_day: list[DayCount]
+    intent_mix: list[IntentCount]
+    disposition_mix: list[DispositionCount]
+    needs_attention: NeedsAttention
+    map_points: list[MapPoint]

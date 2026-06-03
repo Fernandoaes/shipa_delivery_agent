@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 from app.deps import get_db, require_api_key
 from app.models import Escalation, Investigation, Reschedule
 from app.schemas.dashboard import (
-    CallSummary, CustomerDetail, CustomerListItem, EscalationSummary, InvestigationSummary,
-    Metrics, OrderDetail, OrderListItem, RescheduleSummary,
+    CallSummary, CustomerDetail, CustomerListItem, EscalationSummary, Insights,
+    InvestigationSummary, Metrics, OrderDetail, OrderListItem, RescheduleSummary,
 )
 from app.services.calls import list_calls as list_calls_service
 from app.services.customers import get_customer_detail, list_customers
+from app.services.insights import compute_insights
 from app.services.metrics import compute_metrics
 from app.services.orders import get_order_detail, list_orders
 
@@ -40,6 +41,11 @@ def list_escalations(db: Session = Depends(get_db)):
 @router.get("/metrics", response_model=Metrics)
 def metrics(db: Session = Depends(get_db)):
     return compute_metrics(db)
+
+
+@router.get("/insights", response_model=Insights)
+def insights(db: Session = Depends(get_db)):
+    return compute_insights(db)
 
 
 @router.get("/orders", response_model=list[OrderListItem])
