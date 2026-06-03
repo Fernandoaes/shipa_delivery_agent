@@ -1,7 +1,7 @@
 import datetime as dt
 import uuid
 
-from sqlalchemy import ForeignKey, Index, String, Text
+from sqlalchemy import ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,14 +14,17 @@ class Customer(Base):
     customer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     twin_customer_ref: Mapped[str | None] = mapped_column(Text, unique=True, nullable=True)
     full_name: Mapped[str] = mapped_column(Text, nullable=False)
-    primary_phone: Mapped[str] = mapped_column(String, nullable=False)
+    primary_phone: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     alt_phone: Mapped[str | None] = mapped_column(String, nullable=True)
     language_pref: Mapped[str | None] = mapped_column(String, nullable=True)
     last_synced_at: Mapped[dt.datetime] = mapped_column(nullable=False)
 
     orders: Mapped[list["Order"]] = relationship(back_populates="customer")
 
-    __table_args__ = (Index("idx_customers_primary_phone", "primary_phone"),)
+    __table_args__ = (
+        UniqueConstraint("primary_phone", name="uq_customers_primary_phone"),
+        Index("idx_customers_primary_phone", "primary_phone"),
+    )
 
 
 class Order(Base):
