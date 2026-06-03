@@ -2,7 +2,6 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.models import Customer  # noqa: F401  (kept for type clarity)
 from app.models import Escalation, Investigation, Order, Reschedule
 from app.schemas.dashboard import CustomerBrief, OrderDetail, OrderListItem
 from app.schemas.twin import TwinOrderRead
