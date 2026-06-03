@@ -20,6 +20,10 @@ def create_app() -> FastAPI:
 
     app.include_router(ingest.router)
 
+    from app.routers import twin
+
+    app.include_router(twin.router)
+
     return app
 
 
