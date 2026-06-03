@@ -66,6 +66,44 @@ def get_call(db: Session, call_id: uuid.UUID) -> Call | None:
     return db.get(Call, call_id)
 
 
+def upsert_calls(db: Session, items) -> list[Call]:
+    """External write path for call records — keyed on happyrobot_call_id; safe to replay."""
+    out: list[Call] = []
+    for item in items:
+        call = db.query(Call).filter_by(happyrobot_call_id=item.happyrobot_call_id).one_or_none()
+        if call is None:
+            call = Call(
+                happyrobot_call_id=item.happyrobot_call_id,
+                started_at=item.started_at or _now(),
+            )
+            db.add(call)
+
+        order = None
+        if item.twin_order_ref:
+            order = db.query(Order).filter_by(twin_order_ref=item.twin_order_ref).one_or_none()
+
+        call.direction = item.direction
+        call.agent_type = item.agent_type
+        call.caller_number = item.caller_number
+        call.language = item.language
+        call.verification_status = item.verification_status
+        call.intent = item.intent
+        call.disposition = item.disposition
+        call.csat_score = item.csat_score
+        call.recording_url = item.recording_url
+        call.transcript = scrub_otp(item.transcript, order.otp_code if order else None)  # safety: OTP out of transcript
+        call.notes = item.notes
+        if order:
+            call.order_id = order.order_id
+            call.customer_id = order.customer_id
+        if item.started_at:
+            call.started_at = item.started_at
+        call.ended_at = item.ended_at
+        db.flush()
+        out.append(call)
+    return out
+
+
 def set_disposition(db, call, *, disposition, intent=None, csat_score=None,
                     transcript=None, notes=None, recording_url=None):
     if call.disposition is not None:

@@ -1,4 +1,8 @@
+import datetime as dt
+
 from pydantic import BaseModel
+
+from app.schemas.calls import DispositionLiteral, IntentLiteral
 
 
 class IngestOrder(BaseModel):
@@ -22,4 +26,30 @@ class IngestRequest(BaseModel):
 
 
 class IngestResponse(BaseModel):
+    upserted: int
+
+
+class CallSyncItem(BaseModel):
+    happyrobot_call_id: str  # upsert key
+    direction: str = "inbound"
+    agent_type: str = "inbound_exception"
+    caller_number: str | None = None
+    language: str | None = None
+    verification_status: str = "not_started"
+    intent: IntentLiteral | None = None
+    disposition: DispositionLiteral | None = None
+    csat_score: float | None = None
+    recording_url: str | None = None
+    transcript: str | None = None
+    notes: str | None = None
+    twin_order_ref: str | None = None  # optional link to an existing order
+    started_at: dt.datetime | None = None
+    ended_at: dt.datetime | None = None
+
+
+class CallSyncRequest(BaseModel):
+    calls: list[CallSyncItem]
+
+
+class CallSyncResponse(BaseModel):
     upserted: int
