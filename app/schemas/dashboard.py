@@ -111,6 +111,10 @@ class CustomerDetail(BaseModel):
     primary_phone: str
     language_pref: str | None
     orders: list[OrderListItem]
+    calls: list[CallSummary]
+    avg_csat: float | None
+    last_contact_at: dt.datetime | None
+    needs_follow_up: bool
 
 
 class DayCount(BaseModel):
