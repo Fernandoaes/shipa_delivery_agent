@@ -47,6 +47,10 @@ def upsert_orders(db: Session, records: list[OrderRecord]) -> list[Order]:
         order.otp_code = rec.otp_code
         order.assigned_driver = rec.assigned_driver
         order.expected_pieces = rec.expected_pieces
+        order.merchant_lat = rec.merchant_lat
+        order.merchant_lng = rec.merchant_lng
+        order.delivery_lat = rec.delivery_lat
+        order.delivery_lng = rec.delivery_lng
         order.last_synced_at = _now()
         db.flush()
         out.append(order)
