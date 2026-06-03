@@ -14,6 +14,8 @@ class CallSummary(BaseModel):
     csat_score: float | None
     started_at: dt.datetime
     ended_at: dt.datetime | None
+    customer_name: str | None = None
+    twin_order_ref: str | None = None
     # deliberately no transcript / otp / raw caller PII beyond what ops needs
 
     model_config = {"from_attributes": True}

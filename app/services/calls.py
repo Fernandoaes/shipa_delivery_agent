@@ -3,7 +3,8 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.models import Call, Order
+from app.models import Call, Customer, Order
+from app.schemas.dashboard import CallSummary
 from app.security import scrub_otp
 
 
@@ -31,6 +32,33 @@ def get_or_create_call(
     db.add(call)
     db.flush()
     return call
+
+
+def _call_summary(call: Call, customer_name: str | None, twin_order_ref: str | None) -> CallSummary:
+    return CallSummary(
+        call_id=call.call_id,
+        direction=call.direction,
+        language=call.language,
+        verification_status=call.verification_status,
+        intent=call.intent,
+        disposition=call.disposition,
+        csat_score=float(call.csat_score) if call.csat_score is not None else None,
+        started_at=call.started_at,
+        ended_at=call.ended_at,
+        customer_name=customer_name,
+        twin_order_ref=twin_order_ref,
+    )
+
+
+def list_calls(db: Session) -> list[CallSummary]:
+    rows = (
+        db.query(Call, Customer.full_name, Order.twin_order_ref)
+        .outerjoin(Customer, Call.customer_id == Customer.customer_id)
+        .outerjoin(Order, Call.order_id == Order.order_id)
+        .order_by(Call.started_at.desc())
+        .all()
+    )
+    return [_call_summary(call, name, ref) for call, name, ref in rows]
 
 
 def get_call(db: Session, call_id: uuid.UUID) -> Call | None:

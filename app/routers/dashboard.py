@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.deps import get_db, require_api_key
-from app.models import Call, Escalation, Investigation, Reschedule
+from app.models import Escalation, Investigation, Reschedule
 from app.schemas.dashboard import (
     CallSummary, CustomerDetail, CustomerListItem, EscalationSummary, InvestigationSummary,
     Metrics, OrderDetail, OrderListItem, RescheduleSummary,
 )
+from app.services.calls import list_calls as list_calls_service
 from app.services.customers import get_customer_detail, list_customers
 from app.services.metrics import compute_metrics
 from app.services.orders import get_order_detail, list_orders
@@ -18,7 +19,7 @@ router = APIRouter(dependencies=[Depends(require_api_key)])
 
 @router.get("/calls", response_model=list[CallSummary])
 def list_calls(db: Session = Depends(get_db)):
-    return db.query(Call).order_by(Call.started_at.desc()).all()
+    return list_calls_service(db)
 
 
 @router.get("/investigations", response_model=list[InvestigationSummary])
