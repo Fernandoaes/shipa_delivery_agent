@@ -6,18 +6,21 @@ _SEED = [
         merchant="Amazon", status="out_for_delivery", delivery_address="Apt 12, Marina Gate 1, Dubai Marina",
         delivery_area="Dubai Marina", delivery_window="2026-06-03 09:00-12:00", otp_code="4821",
         assigned_driver="Rahul P.", expected_pieces=1, language_pref="en",
+        merchant_lat=24.9180, merchant_lng=55.1610, delivery_lat=25.0805, delivery_lng=55.1403,
     ),
     OrderRecord(
         twin_order_ref="TWIN-1002", customer_name="Omar Al Farsi", customer_phone="+971500000002",
         merchant="Temu", status="failed", delivery_address="Villa 7, Al Barsha 2",
         delivery_area="Al Barsha", delivery_window="2026-06-02 14:00-18:00", otp_code="7310",
         assigned_driver="Sara M.", expected_pieces=3, language_pref="ar",
+        merchant_lat=24.9700, merchant_lng=55.1800, delivery_lat=25.1107, delivery_lng=55.2014,
     ),
     OrderRecord(
         twin_order_ref="TWIN-1003", customer_name="Fatima Noor", customer_phone="+971500000003",
         merchant="Trendyol", status="delivered", delivery_address="Office 401, Business Bay Tower",
         delivery_area="Business Bay", delivery_window="2026-06-01 10:00-13:00", otp_code="1599",
         assigned_driver="Ali K.", expected_pieces=2, language_pref="en",
+        merchant_lat=25.1200, merchant_lng=55.2000, delivery_lat=25.1857, delivery_lng=55.2645,
     ),
 ]
 
