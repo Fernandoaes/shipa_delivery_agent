@@ -55,3 +55,57 @@ class Metrics(BaseModel):
     deflection_rate: float
     avg_csat: float | None
     avg_handle_time_seconds: float | None
+
+
+class CustomerBrief(BaseModel):
+    customer_id: uuid.UUID
+    full_name: str
+    primary_phone: str
+    language_pref: str | None
+    model_config = {"from_attributes": True}
+
+
+class OrderListItem(BaseModel):
+    order_id: uuid.UUID
+    twin_order_ref: str
+    merchant: str
+    status: str
+    delivery_area: str | None
+    delivery_window: str | None
+    assigned_driver: str | None
+    customer_name: str
+
+
+class OrderDetail(BaseModel):
+    order_id: uuid.UUID
+    twin_order_ref: str
+    merchant: str
+    status: str
+    delivery_address: str
+    delivery_area: str | None
+    delivery_window: str | None
+    assigned_driver: str | None
+    expected_pieces: int | None
+    merchant_lat: float | None
+    merchant_lng: float | None
+    delivery_lat: float | None
+    delivery_lng: float | None
+    last_synced_at: dt.datetime
+    customer: CustomerBrief
+    # deliberately no otp_code
+
+
+class CustomerListItem(BaseModel):
+    customer_id: uuid.UUID
+    full_name: str
+    primary_phone: str
+    language_pref: str | None
+    order_count: int
+
+
+class CustomerDetail(BaseModel):
+    customer_id: uuid.UUID
+    full_name: str
+    primary_phone: str
+    language_pref: str | None
+    orders: list[OrderListItem]
