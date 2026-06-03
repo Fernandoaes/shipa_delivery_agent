@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class CallSummary(BaseModel):
     call_id: uuid.UUID
+    order_id: uuid.UUID | None = None
     direction: str
     language: str | None
     verification_status: str
@@ -14,6 +15,8 @@ class CallSummary(BaseModel):
     csat_score: float | None
     started_at: dt.datetime
     ended_at: dt.datetime | None
+    customer_name: str | None = None
+    twin_order_ref: str | None = None
     # deliberately no transcript / otp / raw caller PII beyond what ops needs
 
     model_config = {"from_attributes": True}
@@ -109,3 +112,45 @@ class CustomerDetail(BaseModel):
     primary_phone: str
     language_pref: str | None
     orders: list[OrderListItem]
+    calls: list[CallSummary]
+    avg_csat: float | None
+    last_contact_at: dt.datetime | None
+    needs_follow_up: bool
+
+
+class DayCount(BaseModel):
+    date: dt.date
+    count: int
+
+
+class IntentCount(BaseModel):
+    intent: str
+    count: int
+
+
+class DispositionCount(BaseModel):
+    disposition: str
+    count: int
+
+
+class NeedsAttention(BaseModel):
+    open_escalations: int
+    pending_reschedules: int
+    failed_orders: int
+
+
+class MapPoint(BaseModel):
+    order_id: uuid.UUID
+    twin_order_ref: str
+    status: str
+    delivery_area: str | None
+    delivery_lat: float
+    delivery_lng: float
+
+
+class Insights(BaseModel):
+    calls_per_day: list[DayCount]
+    intent_mix: list[IntentCount]
+    disposition_mix: list[DispositionCount]
+    needs_attention: NeedsAttention
+    map_points: list[MapPoint]
