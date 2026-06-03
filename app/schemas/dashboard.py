@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class CallSummary(BaseModel):
     call_id: uuid.UUID
+    order_id: uuid.UUID | None = None
     direction: str
     language: str | None
     verification_status: str

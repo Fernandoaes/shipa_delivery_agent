@@ -37,6 +37,7 @@ def get_or_create_call(
 def _call_summary(call: Call, customer_name: str | None, twin_order_ref: str | None) -> CallSummary:
     return CallSummary(
         call_id=call.call_id,
+        order_id=call.order_id,
         direction=call.direction,
         language=call.language,
         verification_status=call.verification_status,

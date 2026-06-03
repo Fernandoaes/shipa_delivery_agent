@@ -12,7 +12,8 @@ function pct(n: number) {
 export default async function OverviewPage() {
   const [metrics, insights, calls] = await Promise.all([getMetrics(), getInsights(), getCalls()]);
   const callsPerDay = insights.calls_per_day.map((d) => ({
-    label: new Date(d.date).getDate().toString(),
+    // d.date is "YYYY-MM-DD"; slice the day directly to avoid UTC-parse drift.
+    label: String(Number(d.date.slice(8, 10))),
     value: d.count,
   }));
   const intentMix = insights.intent_mix.map((d) => ({ label: d.intent, value: d.count }));

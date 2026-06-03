@@ -88,9 +88,9 @@ export default function CallsTable({ calls }: { calls: CallSummary[] }) {
                 </div>
               ))}
             </dl>
-            {selected.twin_order_ref && (
-              <Link href="/orders" className="mt-4 inline-block text-sm text-shipa-blue hover:underline">
-                Order {selected.twin_order_ref} →
+            {selected.order_id && (
+              <Link href={`/orders/${selected.order_id}`} className="mt-4 inline-block text-sm text-shipa-blue hover:underline">
+                Order {selected.twin_order_ref ?? "detail"} →
               </Link>
             )}
           </aside>

@@ -1,5 +1,6 @@
 export type CallSummary = {
   call_id: string;
+  order_id: string | null;
   direction: string;
   language: string | null;
   verification_status: string;

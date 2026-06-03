@@ -48,6 +48,7 @@ export default function OrdersTable({ orders }: { orders: OrderListItem[] }) {
             ))}
           </tbody>
         </table>
+        {rows.length === 0 && <p className="px-4 py-6 text-sm text-shipa-ink/60">No orders match.</p>}
       </div>
     </div>
   );
