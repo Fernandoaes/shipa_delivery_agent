@@ -12,6 +12,9 @@ uv run alembic upgrade head      # apply schema
 uv run uvicorn app.main:app --reload
 ```
 
+## Dashboard (frontend)
+A Next.js ops dashboard lives in `frontend/` (orders, customers, delivery map). See `frontend/README.md`.
+
 ## Seed mock orders
 ```bash
 uv run python -c "from app.db import SessionLocal; from app.twin.mock import MockTwinClient; from app.twin.sync import upsert_orders; s=SessionLocal(); upsert_orders(s, MockTwinClient().fetch_all()); s.commit()"

@@ -38,6 +38,10 @@ class Order(Base):
     otp_code: Mapped[str | None] = mapped_column(Text, nullable=True)
     assigned_driver: Mapped[str | None] = mapped_column(Text, nullable=True)
     expected_pieces: Mapped[int | None] = mapped_column(nullable=True)
+    merchant_lat: Mapped[float | None] = mapped_column(nullable=True)
+    merchant_lng: Mapped[float | None] = mapped_column(nullable=True)
+    delivery_lat: Mapped[float | None] = mapped_column(nullable=True)
+    delivery_lng: Mapped[float | None] = mapped_column(nullable=True)
     last_synced_at: Mapped[dt.datetime] = mapped_column(nullable=False)
 
     customer: Mapped["Customer"] = relationship(back_populates="orders")

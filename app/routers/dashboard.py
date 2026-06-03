@@ -1,12 +1,17 @@
-from fastapi import APIRouter, Depends
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.deps import get_db, require_api_key
 from app.models import Call, Escalation, Investigation, Reschedule
 from app.schemas.dashboard import (
-    CallSummary, EscalationSummary, InvestigationSummary, Metrics, RescheduleSummary,
+    CallSummary, CustomerDetail, CustomerListItem, EscalationSummary, InvestigationSummary,
+    Metrics, OrderDetail, OrderListItem, RescheduleSummary,
 )
+from app.services.customers import get_customer_detail, list_customers
 from app.services.metrics import compute_metrics
+from app.services.orders import get_order_detail, list_orders
 
 router = APIRouter(dependencies=[Depends(require_api_key)])
 
@@ -34,3 +39,29 @@ def list_escalations(db: Session = Depends(get_db)):
 @router.get("/metrics", response_model=Metrics)
 def metrics(db: Session = Depends(get_db)):
     return compute_metrics(db)
+
+
+@router.get("/orders", response_model=list[OrderListItem])
+def orders_list(db: Session = Depends(get_db)):
+    return list_orders(db)
+
+
+@router.get("/orders/{order_id}", response_model=OrderDetail)
+def order_detail(order_id: uuid.UUID, db: Session = Depends(get_db)):
+    detail = get_order_detail(db, order_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="order not found")
+    return detail
+
+
+@router.get("/customers", response_model=list[CustomerListItem])
+def customers_list(db: Session = Depends(get_db)):
+    return list_customers(db)
+
+
+@router.get("/customers/{customer_id}", response_model=CustomerDetail)
+def customer_detail(customer_id: uuid.UUID, db: Session = Depends(get_db)):
+    detail = get_customer_detail(db, customer_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="customer not found")
+    return detail
