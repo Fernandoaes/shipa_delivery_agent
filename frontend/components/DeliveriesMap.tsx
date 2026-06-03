@@ -48,7 +48,8 @@ function hubIcon() {
 function FitBounds({ points }: { points: LatLng[] }) {
   const map = useMap();
   useEffect(() => {
-    if (points.length > 0) map.fitBounds(points, { padding: [50, 50] });
+    if (points.length === 1) map.setView(points[0], 11);
+    else if (points.length > 1) map.fitBounds(points, { padding: [50, 50] });
   }, [map, points]);
   return null;
 }
