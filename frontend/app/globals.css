@@ -14,17 +14,9 @@
 
 @theme {
   --color-shipa-blue: #2b3ff2;
-  --color-shipa-blue-dark: #1e2fc4;
   --color-shipa-ink: #0b0d12;
   --color-shipa-sky: #e6f2f9;
   --color-shipa-sky-accent: #bbd9e8;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
