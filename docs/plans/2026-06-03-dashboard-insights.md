@@ -994,25 +994,45 @@ git commit -m "feat(fe): Overview page with KPIs, charts, needs-attention, recen
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import type { MapPoint } from "@/lib/types";
 
 type LatLng = [number, number];
 
 const STATUS_COLOR: Record<string, string> = {
-  out_for_delivery: "#2563eb",
-  pending: "#d97706",
-  failed: "#dc2626",
-  rescheduled: "#64748b",
+  out_for_delivery: "#3b82f6",
+  pending: "#f59e0b",
+  failed: "#ef4444",
+  rescheduled: "#94a3b8",
 };
+
+// Fixed SHIPA fulfilment hub (Al Quoz) — matches the seed origin.
+const HUB: LatLng = [25.158, 55.236];
+
+const LEGEND: [string, string][] = [
+  ["Out for delivery", STATUS_COLOR.out_for_delivery],
+  ["Pending", STATUS_COLOR.pending],
+  ["Failed", STATUS_COLOR.failed],
+  ["Rescheduled", STATUS_COLOR.rescheduled],
+];
 
 function pin(color: string) {
   return L.divIcon({
     className: "",
-    html: `<div style="background:${color};width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+    html: `<div style="background:${color};width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #0b0d12;box-shadow:0 0 8px ${color}aa"></div>`,
     iconSize: [16, 16],
     iconAnchor: [8, 16],
     popupAnchor: [0, -16],
+  });
+}
+
+function hubIcon() {
+  return L.divIcon({
+    className: "",
+    html: `<div style="background:#6366f1;width:22px;height:22px;border-radius:6px;border:2px solid white;box-shadow:0 0 10px #6366f1;display:flex;align-items:center;justify-content:center;color:white;font-size:13px;line-height:1">▦</div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -12],
   });
 }
 
@@ -1028,28 +1048,51 @@ export type DeliveriesMapProps = { points: MapPoint[] };
 
 export default function DeliveriesMap({ points }: DeliveriesMapProps) {
   const latlngs = points.map((p) => [p.delivery_lat, p.delivery_lng] as LatLng);
-  const center: LatLng = latlngs[0] ?? [25.2048, 55.2708];
+  const bounds: LatLng[] = [HUB, ...latlngs];
   return (
-    <MapContainer center={center} zoom={11} scrollWheelZoom={false}
-      style={{ height: "420px", width: "100%", borderRadius: "0.75rem" }}>
-      <TileLayer attribution="&copy; OpenStreetMap contributors"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      {points.map((p) => (
-        <Marker key={p.order_id} position={[p.delivery_lat, p.delivery_lng]}
-          icon={pin(STATUS_COLOR[p.status] ?? "#64748b")}>
-          <Popup>
-            <strong>{p.twin_order_ref}</strong><br />
-            {p.delivery_area ?? "—"}<br />
-            Status: {p.status.replace(/_/g, " ")}<br />
-            <a href={`/orders/${p.order_id}`}>Open order →</a>
-          </Popup>
+    <div className="relative">
+      <MapContainer center={HUB} zoom={11} scrollWheelZoom={false}
+        style={{ height: "460px", width: "100%", borderRadius: "0.75rem" }}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          subdomains="abcd"
+        />
+        {points.map((p) => (
+          <Polyline key={`r-${p.order_id}`} positions={[HUB, [p.delivery_lat, p.delivery_lng]]}
+            pathOptions={{ color: "#34d399", weight: 1, opacity: 0.22 }} />
+        ))}
+        {points.map((p) => (
+          <Marker key={p.order_id} position={[p.delivery_lat, p.delivery_lng]}
+            icon={pin(STATUS_COLOR[p.status] ?? "#94a3b8")}>
+            <Popup>
+              <strong>{p.twin_order_ref}</strong><br />
+              {p.delivery_area ?? "—"}<br />
+              Status: {p.status.replace(/_/g, " ")}<br />
+              <a href={`/orders/${p.order_id}`}>Open order →</a>
+            </Popup>
+          </Marker>
+        ))}
+        <Marker position={HUB} icon={hubIcon()}>
+          <Popup><strong>SHIPA hub</strong><br />Al Quoz fulfilment</Popup>
         </Marker>
-      ))}
-      <FitBounds points={latlngs} />
-    </MapContainer>
+        <FitBounds points={bounds} />
+      </MapContainer>
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-lg border border-white/10 bg-shipa-ink/80 px-3 py-2 text-[11px] text-white/80 shadow-lg">
+        <div className="mb-1 font-mono uppercase tracking-wide text-white/50">Network health</div>
+        {LEGEND.map(([label, color]) => (
+          <div key={label} className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ background: color }} />
+            {label}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 ```
+
+> **Dark map style (per user):** the dashboard stays light, but the map uses CARTO `dark_matter` tiles (free, no API token), glowing status pins, a distinct hub marker, subtle hub→delivery route lines, and an on-map "Network Health" legend — echoing the reference screenshot. Fully functional; popups link to the order.
 
 - [ ] **Step 2: Create the dynamic client wrapper (mirror `components/MapClient.tsx`)**
 
@@ -1087,16 +1130,28 @@ In `frontend/app/page.tsx`: add `import DeliveriesMapClient from "@/components/D
       </div>
 ```
 
-- [ ] **Step 4: Type-check**
+- [ ] **Step 4: Match the order-detail map to the dark style**
 
-Run: `cd frontend && npx tsc --noEmit`
-Expected: no errors.
+In `frontend/components/DeliveryMap.tsx`, replace the existing `<TileLayer>` (the OpenStreetMap one) with the dark CARTO tiles for visual consistency:
 
-- [ ] **Step 5: Commit**
+```tsx
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        subdomains="abcd"
+      />
+```
+
+- [ ] **Step 5: Type-check + build**
+
+Run: `cd frontend && npx tsc --noEmit && npm run build`
+Expected: no errors; build succeeds.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add frontend/components/DeliveriesMap.tsx frontend/components/DeliveriesMapClient.tsx frontend/app/page.tsx
-git commit -m "feat(fe): live deliveries map on Overview"
+git add frontend/components/DeliveriesMap.tsx frontend/components/DeliveriesMapClient.tsx frontend/components/DeliveryMap.tsx frontend/app/page.tsx
+git commit -m "feat(fe): dark-style live deliveries map + order-detail map"
 ```
 
 ---
