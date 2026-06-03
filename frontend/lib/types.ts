@@ -8,6 +8,8 @@ export type CallSummary = {
   csat_score: number | null;
   started_at: string;
   ended_at: string | null;
+  customer_name: string | null;
+  twin_order_ref: string | null;
 };
 
 export type RescheduleSummary = {
@@ -43,6 +45,23 @@ export type Metrics = {
   deflection_rate: number;
   avg_csat: number | null;
   avg_handle_time_seconds: number | null;
+};
+
+export type MapPoint = {
+  order_id: string;
+  twin_order_ref: string;
+  status: string;
+  delivery_area: string | null;
+  delivery_lat: number;
+  delivery_lng: number;
+};
+
+export type Insights = {
+  calls_per_day: { date: string; count: number }[];
+  intent_mix: { intent: string; count: number }[];
+  disposition_mix: { disposition: string; count: number }[];
+  needs_attention: { open_escalations: number; pending_reschedules: number; failed_orders: number };
+  map_points: MapPoint[];
 };
 
 export type OrderListItem = {
@@ -95,4 +114,8 @@ export type CustomerDetail = {
   primary_phone: string;
   language_pref: string | null;
   orders: OrderListItem[];
+  calls: CallSummary[];
+  avg_csat: number | null;
+  last_contact_at: string | null;
+  needs_follow_up: boolean;
 };

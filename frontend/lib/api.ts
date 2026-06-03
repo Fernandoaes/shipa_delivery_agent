@@ -3,6 +3,7 @@ import type {
   CustomerDetail,
   CustomerListItem,
   EscalationSummary,
+  Insights,
   InvestigationSummary,
   Metrics,
   OrderDetail,
@@ -29,6 +30,7 @@ export const getReschedules = () => get<RescheduleSummary[]>("/reschedules");
 export const getInvestigations = () => get<InvestigationSummary[]>("/investigations");
 export const getEscalations = () => get<EscalationSummary[]>("/escalations");
 export const getMetrics = () => get<Metrics>("/metrics");
+export const getInsights = () => get<Insights>("/insights");
 export const getOrders = () => get<OrderListItem[]>("/orders");
 export const getOrder = (id: string) => get<OrderDetail>(`/orders/${id}`);
 export const getCustomers = () => get<CustomerListItem[]>("/customers");
