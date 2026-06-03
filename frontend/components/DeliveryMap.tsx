@@ -60,8 +60,9 @@ export default function DeliveryMap({
       style={{ height: "420px", width: "100%", borderRadius: "0.75rem" }}
     >
       <TileLayer
-        attribution='&copy; OpenStreetMap contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        subdomains="abcd"
       />
       {merchantLatLng && (
         <Marker position={merchantLatLng} icon={pin("#0b0d12")}>
