@@ -42,17 +42,27 @@ SELECT gen_random_uuid(), 'HR-' || o.twin_order_ref, o.order_id, o.customer_id,
                      ELSE 'info_provided' END,
        {_h("o.twin_order_ref", 2, 4, "1,4")}::numeric,
        now()
-         - ({_h("o.twin_order_ref", 0, 14, "5,4")} || ' days')::interval
+         - ({_h("o.twin_order_ref", 0, 30, "5,4")} || ' days')::interval
          - ({_h("o.twin_order_ref", 0, 24, "9,4")} || ' hours')::interval
 FROM orders o JOIN customers cu ON cu.customer_id = o.customer_id
 WHERE o.twin_order_ref LIKE 'TWIN-D%'
 ON CONFLICT (happyrobot_call_id) DO NOTHING;
 """
 
+# Re-spread started_at across the last 30 days (anchored to now) so every
+# range filter (1d/7d/30d) has data; deterministic per call, idempotent-by-shape.
+SPREAD_SQL = f"""
+UPDATE calls
+SET started_at = now()
+      - ({_h("happyrobot_call_id", 0, 30, "5,4")} || ' days')::interval
+      - ({_h("happyrobot_call_id", 0, 24, "9,4")} || ' hours')::interval
+WHERE happyrobot_call_id LIKE 'HR-TWIN-D%';
+"""
+
 ENDED_SQL = f"""
 UPDATE calls
 SET ended_at = started_at + ({_h("happyrobot_call_id", 40, 320, "1,4")} || ' seconds')::interval
-WHERE happyrobot_call_id LIKE 'HR-TWIN-D%' AND ended_at IS NULL;
+WHERE happyrobot_call_id LIKE 'HR-TWIN-D%';
 """
 
 ESCALATIONS_SQL = """
@@ -88,6 +98,7 @@ def main() -> None:
     with psycopg.connect(URL) as conn:
         with conn.cursor() as cur:
             cur.execute(CALLS_SQL)
+            cur.execute(SPREAD_SQL)
             cur.execute(ENDED_SQL)
             cur.execute(ESCALATIONS_SQL)
             cur.execute(RESCHEDULES_SQL)

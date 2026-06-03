@@ -22,13 +22,22 @@ def _seed(db):
     return order
 
 
-def test_calls_per_day_is_zero_filled_14_days(db):
+def test_calls_per_day_is_zero_filled_for_window(db):
     _seed(db)
-    out = compute_insights(db)
-    assert len(out["calls_per_day"]) == 14
+    out = compute_insights(db)  # default 7-day window
+    assert len(out["calls_per_day"]) == 7
     assert sum(d["count"] for d in out["calls_per_day"]) == 2
     dates = [d["date"] for d in out["calls_per_day"]]
     assert dates == sorted(dates)
+
+
+def test_calls_per_day_respects_days_param(db):
+    _seed(db)  # one call now, one 3 days ago
+    assert len(compute_insights(db, days=30)["calls_per_day"]) == 30
+    one_day = compute_insights(db, days=1)
+    assert len(one_day["calls_per_day"]) == 1
+    # only the "now" call falls inside a 1-day window
+    assert sum(d["count"] for d in one_day["calls_per_day"]) == 1
 
 
 def test_intent_and_disposition_mix(db):

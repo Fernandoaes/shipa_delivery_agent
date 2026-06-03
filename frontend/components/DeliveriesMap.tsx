@@ -65,7 +65,7 @@ export default function DeliveriesMap({ points }: DeliveriesMapProps) {
         style={{ height: "460px", width: "100%", borderRadius: "0.75rem" }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           subdomains="abcd"
         />
         {points.map((p) => (
@@ -88,8 +88,8 @@ export default function DeliveriesMap({ points }: DeliveriesMapProps) {
         </Marker>
         <FitBounds points={bounds} />
       </MapContainer>
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-lg border border-white/10 bg-shipa-ink/80 px-3 py-2 text-[11px] text-white/80 shadow-lg">
-        <div className="mb-1 font-mono uppercase tracking-wide text-white/50">Network health</div>
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-lg border border-shipa-sky-accent bg-white/90 px-3 py-2 text-[11px] text-shipa-ink/70 shadow-lg">
+        <div className="mb-1 font-mono uppercase tracking-wide text-shipa-ink/40">Network health</div>
         {LEGEND.map(([label, color]) => (
           <div key={label} className="flex items-center gap-2">
             <span className="inline-block h-2 w-2 rounded-full" style={{ background: color }} />

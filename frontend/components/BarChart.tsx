@@ -8,10 +8,12 @@ export default function BarChart({
     <div className="rounded-xl border border-shipa-sky-accent bg-white p-5">
       <h2 className="mb-4 text-sm font-semibold text-shipa-ink">{title}</h2>
       {orientation === "vertical" ? (
-        <div className="flex h-40 items-end gap-1">
+        <div className="flex h-40 items-stretch gap-1">
           {data.map((d) => (
-            <div key={d.label} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${d.label}: ${d.value}`}>
-              <div className="w-full rounded-t bg-shipa-blue/80" style={{ height: `${(d.value / max) * 100}%` }} />
+            <div key={d.label} className="flex h-full flex-1 flex-col items-center gap-1" title={`${d.label}: ${d.value}`}>
+              <div className="flex w-full flex-1 items-end">
+                <div className="w-full rounded-t bg-shipa-blue/80" style={{ height: `${(d.value / max) * 100}%` }} />
+              </div>
               <div className="text-[10px] text-shipa-ink/40">{d.label}</div>
             </div>
           ))}

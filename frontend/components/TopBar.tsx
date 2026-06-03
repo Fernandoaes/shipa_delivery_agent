@@ -17,7 +17,7 @@ const links = [
 export default function TopBar() {
   const pathname = usePathname();
   return (
-    <header className="flex items-center gap-8 border-b border-shipa-sky-accent bg-white px-6 py-4">
+    <header className="sticky top-0 z-[1100] flex items-center gap-8 border-b border-shipa-sky-accent bg-white px-6 py-4">
       <Link href="/" className="flex items-center">
         <Image src="/shipa-logo.svg" alt="SHIPA" width={120} height={28} priority />
       </Link>

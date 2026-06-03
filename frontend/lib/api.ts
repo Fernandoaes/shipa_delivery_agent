@@ -30,7 +30,7 @@ export const getReschedules = () => get<RescheduleSummary[]>("/reschedules");
 export const getInvestigations = () => get<InvestigationSummary[]>("/investigations");
 export const getEscalations = () => get<EscalationSummary[]>("/escalations");
 export const getMetrics = () => get<Metrics>("/metrics");
-export const getInsights = () => get<Insights>("/insights");
+export const getInsights = (days = 7) => get<Insights>(`/insights?days=${days}`);
 export const getOrders = () => get<OrderListItem[]>("/orders");
 export const getOrder = (id: string) => get<OrderDetail>(`/orders/${id}`);
 export const getCustomers = () => get<CustomerListItem[]>("/customers");

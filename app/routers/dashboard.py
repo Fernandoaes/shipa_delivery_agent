@@ -44,8 +44,9 @@ def metrics(db: Session = Depends(get_db)):
 
 
 @router.get("/insights", response_model=Insights)
-def insights(db: Session = Depends(get_db)):
-    return compute_insights(db)
+def insights(days: int = 7, db: Session = Depends(get_db)):
+    window = days if days in (1, 7, 30) else 7
+    return compute_insights(db, days=window)
 
 
 @router.get("/orders", response_model=list[OrderListItem])

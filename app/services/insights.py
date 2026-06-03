@@ -8,21 +8,23 @@ from app.models import Call, Escalation, Order, Reschedule
 _ACTIVE_STATUSES = ("out_for_delivery", "pending", "failed", "rescheduled")
 
 
-def compute_insights(db: Session) -> dict:
+def compute_insights(db: Session, days: int = 7) -> dict:
     calls = db.query(Call).all()
 
     # Day bucketing uses the server clock (UTC in deployment), matching stored started_at and the compute_metrics convention.
     today = dt.date.today()
-    start = today - dt.timedelta(days=13)
-    per_day: dict[dt.date, int] = {start + dt.timedelta(days=i): 0 for i in range(14)}
-    for c in calls:
+    start = today - dt.timedelta(days=days - 1)
+    per_day: dict[dt.date, int] = {start + dt.timedelta(days=i): 0 for i in range(days)}
+    # charts + mixes reflect the selected window; needs_attention/map_points stay current-state.
+    windowed = [c for c in calls if c.started_at.date() >= start]
+    for c in windowed:
         d = c.started_at.date()
         if d in per_day:
             per_day[d] += 1
     calls_per_day = [{"date": d, "count": n} for d, n in sorted(per_day.items())]
 
-    intent_counter = Counter((c.intent or "unknown") for c in calls)
-    disposition_counter = Counter((c.disposition or "unknown") for c in calls)
+    intent_counter = Counter((c.intent or "unknown") for c in windowed)
+    disposition_counter = Counter((c.disposition or "unknown") for c in windowed)
     intent_mix = [{"intent": k, "count": v} for k, v in intent_counter.most_common()]
     disposition_mix = [{"disposition": k, "count": v} for k, v in disposition_counter.most_common()]
 
