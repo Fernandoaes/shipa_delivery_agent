@@ -1,3 +1,11 @@
+export type RescheduleBrief = {
+  requested_date: string;
+  requested_window: string | null;
+  reason: string | null;
+  status: string;
+  synced_to_twin_at: string | null;
+};
+
 export type CallSummary = {
   call_id: string;
   order_id: string | null;
@@ -11,6 +19,9 @@ export type CallSummary = {
   ended_at: string | null;
   customer_name: string | null;
   twin_order_ref: string | null;
+  caller_number: string | null;
+  notes: string | null;
+  reschedule: RescheduleBrief | null;
 };
 
 export type RescheduleSummary = {

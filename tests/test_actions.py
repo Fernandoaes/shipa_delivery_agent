@@ -29,11 +29,16 @@ def _h(verified):
     return {**HEADERS, "X-Call-Id": verified["call_id"]}
 
 
-def test_reschedule(client, verified):
+def test_reschedule(client, verified, db):
+    from app.models.read import Order
     r = client.post(f"/orders/{verified['order_id']}/reschedule", headers=_h(verified),
                     json={"requested_date": _future_working_day(), "requested_window": "09:00-12:00", "reason": "not home"})
     assert r.status_code == 200
     assert r.json()["status"] == "requested"
+    import uuid
+    db.expire_all()
+    order = db.get(Order, uuid.UUID(verified["order_id"]))
+    assert order.status == "rescheduled"
 
 
 def test_investigation(client, verified):

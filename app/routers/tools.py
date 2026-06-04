@@ -84,9 +84,10 @@ def _require_order(db: Session, order_id: uuid.UUID):
 @router.post("/orders/{order_id}/reschedule", response_model=RescheduleResponse)
 def reschedule(order_id: uuid.UUID, payload: RescheduleRequest,
                call=Depends(load_verified_call), db: Session = Depends(get_db)) -> RescheduleResponse:
-    _require_order(db, order_id)
+    order = _require_order(db, order_id)
     row = actions.create_reschedule(db, call.call_id, order_id, payload.requested_date,
                                     payload.requested_window, payload.reason)
+    order.status = "rescheduled"
     db.commit()
     return RescheduleResponse(reschedule_id=row.reschedule_id, status=row.status, requested_date=row.requested_date)
 
