@@ -114,7 +114,7 @@ class InvestigationSyncRequest(BaseModel):
 class EscalationSyncItem(_BlankToNone):
     happyrobot_call_id: str
     twin_order_ref: str | None = None  # escalations may have no order
-    category: EscalationCategory
+    category: EscalationCategory = "complaint"
     reason: str | None = None
     status: str = "open"
     assigned_to: str | None = None
