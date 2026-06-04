@@ -3,9 +3,9 @@ import type { MapPoint } from "@/lib/types";
 
 const DOT: Record<string, string> = {
   out_for_delivery: "bg-[#3b82f6]",
-  pending: "bg-warn",
+  pending: "bg-ok",
   failed: "bg-bad",
-  rescheduled: "bg-muted",
+  rescheduled: "bg-warn",
 };
 
 export default function LiveOrdersPanel({ points }: { points: MapPoint[] }) {

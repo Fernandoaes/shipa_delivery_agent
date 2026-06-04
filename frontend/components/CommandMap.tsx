@@ -10,14 +10,15 @@ import { HUB, healthCounts, type DriverRoute, type LatLng } from "@/lib/insights
 
 const STATUS_COLOR: Record<string, string> = {
   out_for_delivery: "#3b82f6",
-  pending: "#f59e0b",
+  pending: "#34d399", // green = scheduled / on track
   failed: "#ef4444",
-  rescheduled: "#94a3b8",
+  rescheduled: "#f59e0b", // amber = needs attention
 };
 
 const LEGEND: [string, string][] = [
   ["Out for delivery", STATUS_COLOR.out_for_delivery],
   ["Pending", STATUS_COLOR.pending],
+  ["Rescheduled", STATUS_COLOR.rescheduled],
   ["Failed", STATUS_COLOR.failed],
   ["Driver en route", "#22d3ee"],
 ];
