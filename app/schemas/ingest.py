@@ -33,6 +33,10 @@ class IngestOrder(_BlankToNone):
     expected_pieces: int | None = None
     language_pref: str | None = None
     twin_customer_ref: str | None = None
+    merchant_lat: float | None = None
+    merchant_lng: float | None = None
+    delivery_lat: float | None = None
+    delivery_lng: float | None = None
 
 
 class IngestRequest(BaseModel):

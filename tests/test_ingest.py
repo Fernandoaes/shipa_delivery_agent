@@ -28,3 +28,11 @@ def test_ingest_response_excludes_otp(client):
     r = client.post("/orders/sync", headers=HEADERS, json=PAYLOAD)
     assert "otp_code" not in r.text
     assert "5555" not in r.text
+
+
+def test_ingest_accepts_coordinates(client):
+    payload = {"orders": [{**PAYLOAD["orders"][0], "twin_order_ref": "TWIN-2002",
+                           "delivery_lat": 25.08, "delivery_lng": 55.14}]}
+    assert client.post("/orders/sync", headers=HEADERS, json=payload).status_code == 200
+    pts = client.get("/insights", headers={"X-API-Key": "dev-dashboard-key-change-me"}).json()["map_points"]
+    assert any(p["delivery_lat"] == 25.08 for p in pts)
