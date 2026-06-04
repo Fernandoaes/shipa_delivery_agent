@@ -83,7 +83,8 @@ gen AS (
 )
 INSERT INTO orders (order_id, twin_order_ref, customer_id, merchant, status, delivery_address,
                     delivery_area, delivery_window, otp_code, assigned_driver, expected_pieces,
-                    merchant_lat, merchant_lng, delivery_lat, delivery_lng, last_synced_at)
+                    merchant_lat, merchant_lng, delivery_lat, delivery_lng, last_synced_at,
+                    attempt_count, delivered_at, sla_due_at)
 SELECT gen_random_uuid(),
        'TWIN-D' || gen.n,
        c.customer_id,
@@ -106,7 +107,25 @@ SELECT gen_random_uuid(),
        ar.hub_lat, ar.hub_lng,
        ar.lat + ((((gen.n * 13) %% 21) - 10) * 0.0009),
        ar.lng + ((((gen.n * 29) %% 21) - 10) * 0.0009),
-       now()
+       now(),
+       -- attempt_count: failed/returned/rescheduled took >=2 attempts; a minority of delivered took 2-3
+       CASE
+         WHEN st.status IN ('failed','returned') THEN 2 + (gen.n %% 2)
+         WHEN st.status = 'rescheduled' THEN 2
+         WHEN st.status = 'delivered' AND gen.n %% 6 = 0 THEN 2
+         ELSE 1
+       END,
+       -- delivered_at: set for delivered rows, derived from the window date
+       CASE WHEN st.status = 'delivered'
+            THEN (now()::date - (1 + gen.n %% 3)) + time '10:30' ELSE NULL END,
+       -- sla_due_at: promised deadline; ~88 pct of delivered land on/before it
+       CASE
+         WHEN st.status = 'delivered'
+           THEN (now()::date - (1 + gen.n %% 3)) + CASE WHEN gen.n %% 8 = 0 THEN time '09:00' ELSE time '17:00' END
+         WHEN st.status IN ('out_for_delivery','rescheduled','failed','returned')
+           THEN (now()::date + (gen.n %% 3)) + time '17:00'
+         ELSE NULL
+       END
 FROM gen
 CROSS JOIN cfg
 JOIN customers c ON c.twin_customer_ref = 'TWIN-CUST-D' || gen.g
