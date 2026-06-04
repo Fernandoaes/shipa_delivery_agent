@@ -18,15 +18,24 @@ export default function StackedBarChart({ title, data }: { title: string; data: 
     return Array.from(set).sort();
   }, [data]);
   const color = (c: string) => COLORS[channels.indexOf(c) % COLORS.length];
-  const max = Math.max(1, ...data.map((d) => Object.values(d.channels).reduce((a, b) => a + b, 0)));
+  // Nice integer y-axis: round the step up so ticks are whole numbers evenly spaced from axisMax to 0.
+  const { axisMax, ticks } = useMemo(() => {
+    const rawMax = Math.max(1, ...data.map((d) => Object.values(d.channels).reduce((a, b) => a + b, 0)));
+    const step = Math.max(1, Math.ceil(rawMax / 4));
+    const axisMax = Math.ceil(rawMax / step) * step;
+    const ticks: number[] = [];
+    for (let v = axisMax; v >= 0; v -= step) ticks.push(v);
+    return { axisMax, ticks };
+  }, [data]);
 
   return (
     <div className="rounded-xl border border-hairline bg-panel p-4">
       <h2 className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-txt-faint">{title}</h2>
       <div className="flex gap-2">
         <div className="flex h-40 flex-col justify-between text-right font-mono text-[10px] tabular-nums text-txt-faint">
-          <span>{max}</span>
-          <span>0</span>
+          {ticks.map((t) => (
+            <span key={t}>{t}</span>
+          ))}
         </div>
         <div className="flex-1">
           <div className="flex h-40 items-end gap-1">
@@ -35,7 +44,7 @@ export default function StackedBarChart({ title, data }: { title: string; data: 
                 {channels.map((c) => {
                   const v = d.channels[c] ?? 0;
                   return v ? (
-                    <div key={c} style={{ height: `${(v / max) * 100}%`, background: color(c) }} />
+                    <div key={c} style={{ height: `${(v / axisMax) * 100}%`, background: color(c) }} />
                   ) : null;
                 })}
               </div>
