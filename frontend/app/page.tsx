@@ -29,7 +29,7 @@ export default async function CommandCenter({
   const { range } = await searchParams;
   const selected = RANGES.find((r) => r.label === range) ?? RANGES[1];
   const [metrics, insights, calls, orders] = await Promise.all([
-    getMetrics(),
+    getMetrics(selected.days),
     getInsights(selected.days),
     getCalls(),
     getOrders(),

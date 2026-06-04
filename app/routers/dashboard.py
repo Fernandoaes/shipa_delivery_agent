@@ -57,8 +57,9 @@ def list_fallback_messages(db: Session = Depends(get_db)):
 
 
 @router.get("/metrics", response_model=Metrics)
-def metrics(db: Session = Depends(get_db)):
-    return compute_metrics(db)
+def metrics(days: int = 7, db: Session = Depends(get_db)):
+    window = days if days in (1, 7, 30) else 7
+    return compute_metrics(db, days=window)
 
 
 @router.get("/insights", response_model=Insights)

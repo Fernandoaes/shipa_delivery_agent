@@ -1,6 +1,7 @@
 import datetime as dt
 from collections import Counter
 
+from sqlalchemy import distinct, func
 from sqlalchemy.orm import Session
 
 from app.models import Call, Escalation, Order, Reschedule
@@ -15,7 +16,7 @@ def compute_insights(db: Session, days: int = 7) -> dict:
     today = dt.date.today()
     start = today - dt.timedelta(days=days - 1)
     per_day: dict[dt.date, int] = {start + dt.timedelta(days=i): 0 for i in range(days)}
-    # charts + mixes reflect the selected window; needs_attention/map_points stay current-state.
+    # charts + mixes + needs_attention reflect the selected window; map_points stay current-state.
     windowed = [c for c in calls if c.started_at.date() >= start]
     for c in windowed:
         d = c.started_at.date()
@@ -28,10 +29,19 @@ def compute_insights(db: Session, days: int = 7) -> dict:
     intent_mix = [{"intent": k, "count": v} for k, v in intent_counter.most_common()]
     disposition_mix = [{"disposition": k, "count": v} for k, v in disposition_counter.most_common()]
 
+    # windowed by the row's own timestamp; failed_orders by their call's started_at
+    # (every order has a call in the demo data) so Network Risk tracks the range.
     needs_attention = {
-        "open_escalations": db.query(Escalation).filter(Escalation.status == "open").count(),
-        "pending_reschedules": db.query(Reschedule).filter(Reschedule.synced_to_twin_at.is_(None)).count(),
-        "failed_orders": db.query(Order).filter(Order.status.in_(["failed", "returned"])).count(),
+        "open_escalations": db.query(Escalation)
+        .filter(Escalation.status == "open", Escalation.created_at >= start)
+        .count(),
+        "pending_reschedules": db.query(Reschedule)
+        .filter(Reschedule.synced_to_twin_at.is_(None), Reschedule.created_at >= start)
+        .count(),
+        "failed_orders": db.query(func.count(distinct(Order.order_id)))
+        .join(Call, Call.order_id == Order.order_id)
+        .filter(Order.status.in_(["failed", "returned"]), Call.started_at >= start)
+        .scalar(),
     }
 
     map_orders = (

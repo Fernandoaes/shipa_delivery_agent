@@ -59,10 +59,12 @@ def test_needs_attention_counts(db):
                       synced_to_twin_at=None, created_at=dt.datetime.now()))
     order.status = "failed"
     db.flush()
-    out = compute_insights(db)
+    out = compute_insights(db)  # default 7d window
     assert out["needs_attention"]["open_escalations"] == 1
     assert out["needs_attention"]["pending_reschedules"] == 1
-    assert out["needs_attention"]["failed_orders"] == 2  # TWIN-1001 set to failed + TWIN-1002 already failed in mock
+    # windowed by the related call's started_at: only TWIN-1001 has calls in-window.
+    # TWIN-1002 is failed in the mock but has no call, so it is not in the attention queue.
+    assert out["needs_attention"]["failed_orders"] == 1
 
 
 def test_map_points_only_active_with_coords(db):

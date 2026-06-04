@@ -19,10 +19,7 @@ if not URL:
     sys.exit("No DATABASE_PUBLIC_URL / DATABASE_URL in environment")
 URL = URL.replace("postgresql+psycopg://", "postgresql://")
 
-N_CUST = 40
-
-# Single Shipa fulfilment hub (Al Quoz) — origin for every merchant leg.
-HUB_LAT, HUB_LNG = 25.158, 55.236
+N_CUST = 12
 
 CUSTOMERS_SQL = """
 WITH params AS (
@@ -46,16 +43,37 @@ CROSS JOIN params p
 ON CONFLICT (twin_customer_ref) DO NOTHING;
 """
 
-# delivery_lat/lng arrays are index-aligned with areas (real Dubai centroids).
+# areas / lats / lngs (real UAE centroids) and hub_lats / hub_lngs (regional
+# fulfilment origin per area) are all index-aligned. Spread across four emirates:
+# Dubai (1-14), Sharjah (15-18), Ajman (19-20), Abu Dhabi (21-25).
 ORDERS_SQL = """
 WITH cfg AS (
   SELECT
-    ARRAY['Amazon','Temu','Trendyol','Noon','SHEIN','AliExpress'] AS merchants,
+    ARRAY['Amazon','Temu','Trendyol','Noon','SHEIN','AliExpress','Namshi','Carrefour'] AS merchants,
     ARRAY['pending','out_for_delivery','delivered','failed','rescheduled','returned','cancelled'] AS statuses,
-    ARRAY['Dubai Marina','Al Barsha','Business Bay','Deira','JLT','Downtown','JVC','Mirdif','Silicon Oasis','Karama'] AS areas,
-    ARRAY[25.077,25.113,25.187,25.271,25.069,25.197,25.058,25.217,25.121,25.245] AS lats,
-    ARRAY[55.139,55.196,55.263,55.312,55.143,55.274,55.209,55.418,55.378,55.304] AS lngs,
-    ARRAY['Rahul P.','Sara M.','Ali K.','Yusuf A.','Fatima Z.','Deepak R.','Hana S.','Marco T.'] AS drivers,
+    ARRAY['Dubai Marina','Al Barsha','Business Bay','Deira','JLT','Downtown','JVC','Mirdif',
+          'Silicon Oasis','Karama','Jumeirah','Palm Jumeirah','International City','Dubai Hills',
+          'Al Majaz','Al Nahda','Muweilah','Al Khan',
+          'Ajman Corniche','Al Nuaimiya',
+          'Al Reem Island','Khalifa City','Yas Island','Corniche AD','Al Raha'] AS areas,
+    ARRAY[25.077,25.113,25.187,25.271,25.069,25.197,25.058,25.217,25.121,25.245,25.203,25.112,25.166,25.103,
+          25.327,25.297,25.290,25.330,
+          25.411,25.396,
+          24.498,24.419,24.499,24.466,24.456] AS lats,
+    ARRAY[55.139,55.196,55.263,55.312,55.143,55.274,55.209,55.418,55.378,55.304,55.244,55.138,55.408,55.247,
+          55.382,55.371,55.470,55.365,
+          55.435,55.477,
+          54.404,54.578,54.607,54.330,54.610] AS lngs,
+    ARRAY[25.130,25.130,25.130,25.130,25.130,25.130,25.130,25.130,25.130,25.130,25.130,25.130,25.130,25.130,
+          25.317,25.317,25.317,25.317,
+          25.405,25.405,
+          24.350,24.350,24.350,24.350,24.350] AS hub_lats,
+    ARRAY[55.233,55.233,55.233,55.233,55.233,55.233,55.233,55.233,55.233,55.233,55.233,55.233,55.233,55.233,
+          55.420,55.420,55.420,55.420,
+          55.510,55.510,
+          54.500,54.500,54.500,54.500,54.500] AS hub_lngs,
+    ARRAY['Rahul P.','Sara M.','Ali K.','Yusuf A.','Fatima Z.','Deepak R.','Hana S.','Marco T.',
+          'Imran B.','Lena O.','Faisal R.','Grace W.'] AS drivers,
     ARRAY[' 09:00-12:00',' 13:00-17:00',' 18:00-21:00'] AS windows
 ),
 gen AS (
@@ -85,7 +103,7 @@ SELECT gen_random_uuid(),
        CASE WHEN st.status IN ('pending','cancelled')
             THEN NULL ELSE cfg.drivers[1 + (gen.n %% array_length(cfg.drivers, 1))] END,
        1 + (gen.n %% 4),
-       {hub_lat}, {hub_lng},
+       ar.hub_lat, ar.hub_lng,
        ar.lat + ((((gen.n * 13) %% 21) - 10) * 0.0009),
        ar.lng + ((((gen.n * 29) %% 21) - 10) * 0.0009),
        now()
@@ -94,12 +112,14 @@ CROSS JOIN cfg
 JOIN customers c ON c.twin_customer_ref = 'TWIN-CUST-D' || gen.g
 JOIN LATERAL (SELECT cfg.statuses[1 + (gen.n %% array_length(cfg.statuses, 1))] AS status) st ON true
 JOIN LATERAL (
-  SELECT idx,
-         cfg.areas[idx] AS area, cfg.lats[idx] AS lat, cfg.lngs[idx] AS lng
-  FROM (SELECT 1 + (gen.n %% array_length(cfg.areas, 1)) AS idx) i
+  SELECT cfg.areas[idx] AS area,
+         cfg.lats[idx] AS lat, cfg.lngs[idx] AS lng,
+         cfg.hub_lats[idx] AS hub_lat, cfg.hub_lngs[idx] AS hub_lng
+  -- gen.n = g*100+s collapses to s under %% array_length; use (3g+s) so all areas are hit.
+  FROM (SELECT 1 + ((gen.g * 3 + gen.s) %% array_length(cfg.areas, 1)) AS idx) i
 ) ar ON true
 ON CONFLICT (twin_order_ref) DO NOTHING;
-""".format(hub_lat=HUB_LAT, hub_lng=HUB_LNG)
+"""
 
 
 def main() -> None:
@@ -118,7 +138,9 @@ def main() -> None:
                 "AND delivery_lat IS NOT NULL AND delivery_lng IS NOT NULL"
             )
             coords = cur.fetchone()[0]
-    print(f"customers(D)={cust}  orders(D)={ords}  orders_with_coords={coords}")
+            cur.execute("SELECT count(DISTINCT delivery_area) FROM orders WHERE twin_order_ref LIKE 'TWIN-D%%'")
+            areas = cur.fetchone()[0]
+    print(f"customers(D)={cust}  orders(D)={ords}  orders_with_coords={coords}  distinct_areas={areas}")
 
 
 if __name__ == "__main__":

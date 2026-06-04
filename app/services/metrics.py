@@ -1,10 +1,15 @@
+import datetime as dt
+
 from sqlalchemy.orm import Session
 
 from app.models import Call, Escalation
 
 
-def compute_metrics(db: Session) -> dict:
-    calls = db.query(Call).all()
+def compute_metrics(db: Session, days: int = 7) -> dict:
+    # Window by started_at (same server-clock convention as compute_insights) so
+    # KPIs respond to the dashboard's 1d/7d/30d selector.
+    start = dt.date.today() - dt.timedelta(days=days - 1)
+    calls = [c for c in db.query(Call).all() if c.started_at.date() >= start]
     total = len(calls)
     completed = [c for c in calls if c.ended_at]
     # first-attempt: verified passed on the call (proxy for resolved without re-contact)

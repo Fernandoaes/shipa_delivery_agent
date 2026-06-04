@@ -29,7 +29,7 @@ export const getCalls = () => get<CallSummary[]>("/calls");
 export const getReschedules = () => get<RescheduleSummary[]>("/reschedules");
 export const getInvestigations = () => get<InvestigationSummary[]>("/investigations");
 export const getEscalations = () => get<EscalationSummary[]>("/escalations");
-export const getMetrics = () => get<Metrics>("/metrics");
+export const getMetrics = (days = 7) => get<Metrics>(`/metrics?days=${days}`);
 export const getInsights = (days = 7) => get<Insights>(`/insights?days=${days}`);
 export const getOrders = () => get<OrderListItem[]>("/orders");
 export const getOrder = (id: string) => get<OrderDetail>(`/orders/${id}`);
