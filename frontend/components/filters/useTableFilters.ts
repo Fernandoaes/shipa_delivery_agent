@@ -3,6 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
+// Uses useSearchParams: any component calling this must sit inside a <Suspense>
+// boundary, or static rendering of its page fails the Next build.
 export function useTableFilters() {
   const router = useRouter();
   const pathname = usePathname();
