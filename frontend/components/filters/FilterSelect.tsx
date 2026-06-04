@@ -9,6 +9,7 @@ export default function FilterSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      aria-label={allLabel}
       className="rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm text-txt"
     >
       <option value="">{allLabel}</option>
