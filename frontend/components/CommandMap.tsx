@@ -6,11 +6,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import type { MapPoint } from "@/lib/types";
-import { HUB, healthCounts, type DriverRoute, type LatLng } from "@/lib/insights";
+import { HUB, healthCounts, buildMerchantNodes, arcPath, type DriverRoute, type LatLng } from "@/lib/insights";
+
+const MERCHANT_COLOR = "#a78bfa";
 
 const STATUS_COLOR: Record<string, string> = {
-  out_for_delivery: "#3b82f6",
-  pending: "#34d399", // green = scheduled / on track
+  out_for_delivery: "#34d399", // green = in motion / on track
+  pending: "#3b82f6", // blue = queued / waiting
   failed: "#ef4444",
   rescheduled: "#f59e0b", // amber = needs attention
 };
@@ -21,6 +23,7 @@ const LEGEND: [string, string][] = [
   ["Rescheduled", STATUS_COLOR.rescheduled],
   ["Failed", STATUS_COLOR.failed],
   ["Driver en route", "#22d3ee"],
+  ["Merchant origin", MERCHANT_COLOR],
 ];
 
 // Customer/recipient marker — person glyph in status colour.
@@ -29,6 +32,19 @@ const PERSON_GLYPH =
 
 const TRUCK_GLYPH =
   '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17V6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1"/><path d="M14 9h4l4 4v3a1 1 0 0 1-1 1h-1"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>';
+
+const FACTORY_GLYPH =
+  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V9l6 4V9l6 4V6l4 2v12"/><path d="M9 20v-4h2v4"/></svg>';
+
+function merchantIcon() {
+  return L.divIcon({
+    className: "",
+    html: `<div style="background:${MERCHANT_COLOR};width:24px;height:24px;border-radius:6px;border:1.5px solid rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px ${MERCHANT_COLOR}55;display:flex;align-items:center;justify-content:center">${FACTORY_GLYPH}</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -14],
+  });
+}
 
 function stopIcon(color: string) {
   return L.divIcon({
@@ -74,7 +90,8 @@ export type CommandMapProps = { points: MapPoint[]; drivers?: DriverRoute[]; hei
 export default function CommandMap({ points, drivers = [], height = "68vh" }: CommandMapProps) {
   const router = useRouter();
   const latlngs = points.map((p) => [p.delivery_lat, p.delivery_lng] as LatLng);
-  const bounds: LatLng[] = [HUB, ...latlngs];
+  const merchants = buildMerchantNodes(points);
+  const bounds: LatLng[] = [HUB, ...latlngs, ...merchants.map((m) => m.position)];
   const health = healthCounts(points);
 
   return (
@@ -96,13 +113,35 @@ export default function CommandMap({ points, drivers = [], height = "68vh" }: Co
         {drivers.map((d) => (
           <Polyline
             key={`route-${d.driver}`}
-            positions={d.path}
+            positions={arcPath(d.path)}
             pathOptions={{
               color: d.atRisk ? "#f59e0b" : "#22d3ee",
               weight: 2.5,
-              opacity: 0.6,
+              opacity: 0.7,
+              dashArray: "1 10",
+              className: "cc-flow",
             }}
           />
+        ))}
+
+        {merchants
+          .filter((m) => m.activeCount > 0)
+          .map((m) => (
+            <Polyline
+              key={`inbound-${m.merchant}`}
+              positions={[m.position, HUB]}
+              pathOptions={{ color: MERCHANT_COLOR, weight: 1.5, opacity: 0.35, dashArray: "6 8" }}
+            />
+          ))}
+
+        {merchants.map((m) => (
+          <Marker key={`merch-${m.merchant}`} position={m.position} icon={merchantIcon()}>
+            <Popup>
+              <strong>{m.merchant}</strong>
+              <br />
+              {m.activeCount} active order{m.activeCount === 1 ? "" : "s"}
+            </Popup>
+          </Marker>
         ))}
 
         {points.map((p) => (
