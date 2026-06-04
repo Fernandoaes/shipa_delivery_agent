@@ -6,10 +6,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import type { MapPoint } from "@/lib/types";
-import { healthCounts } from "@/lib/insights";
-
-type LatLng = [number, number];
-const HUB: LatLng = [25.158, 55.236]; // Al Quoz fulfilment hub (matches seed origin)
+import { HUB, healthCounts, type DriverRoute, type LatLng } from "@/lib/insights";
 
 const STATUS_COLOR: Record<string, string> = {
   out_for_delivery: "#3b82f6",
@@ -22,19 +19,32 @@ const LEGEND: [string, string][] = [
   ["Out for delivery", STATUS_COLOR.out_for_delivery],
   ["Pending", STATUS_COLOR.pending],
   ["Failed", STATUS_COLOR.failed],
-  ["Rescheduled", STATUS_COLOR.rescheduled],
+  ["Driver en route", "#22d3ee"],
 ];
 
-// Rounded-square marker matching the reference; SVG glyph is inlined for divIcon.
-const PIN_GLYPH =
-  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="m3 9 2-5h14l2 5"/></svg>';
+// Customer/recipient marker — person glyph in status colour.
+const PERSON_GLYPH =
+  '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/></svg>';
+
+const TRUCK_GLYPH =
+  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17V6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1"/><path d="M14 9h4l4 4v3a1 1 0 0 1-1 1h-1"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>';
 
 function stopIcon(color: string) {
   return L.divIcon({
     className: "",
-    html: `<div style="background:${color};width:24px;height:24px;border-radius:7px;border:1.5px solid rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px ${color}55;display:flex;align-items:center;justify-content:center">${PIN_GLYPH}</div>`,
+    html: `<div style="background:${color};width:24px;height:24px;border-radius:7px;border:1.5px solid rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px ${color}55;display:flex;align-items:center;justify-content:center">${PERSON_GLYPH}</div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
+    popupAnchor: [0, -14],
+  });
+}
+
+function driverIcon(color: string) {
+  return L.divIcon({
+    className: "",
+    html: `<div style="background:${color};width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 10px ${color}aa;display:flex;align-items:center;justify-content:center">${TRUCK_GLYPH}</div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
     popupAnchor: [0, -14],
   });
 }
@@ -58,9 +68,9 @@ function FitBounds({ points }: { points: LatLng[] }) {
   return null;
 }
 
-export type CommandMapProps = { points: MapPoint[]; height?: string };
+export type CommandMapProps = { points: MapPoint[]; drivers?: DriverRoute[]; height?: string };
 
-export default function CommandMap({ points, height = "68vh" }: CommandMapProps) {
+export default function CommandMap({ points, drivers = [], height = "68vh" }: CommandMapProps) {
   const router = useRouter();
   const latlngs = points.map((p) => [p.delivery_lat, p.delivery_lng] as LatLng);
   const bounds: LatLng[] = [HUB, ...latlngs];
@@ -76,17 +86,24 @@ export default function CommandMap({ points, height = "68vh" }: CommandMapProps)
         style={{ height, width: "100%", background: "#0b0d12" }}
       >
         <TileLayer
+          className="cc-tiles"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           subdomains="abcd"
         />
-        {points.map((p) => (
+
+        {drivers.map((d) => (
           <Polyline
-            key={`r-${p.order_id}`}
-            positions={[HUB, [p.delivery_lat, p.delivery_lng]]}
-            pathOptions={{ color: "#34d399", weight: 1, opacity: 0.22 }}
+            key={`route-${d.driver}`}
+            positions={d.path}
+            pathOptions={{
+              color: d.atRisk ? "#f59e0b" : "#22d3ee",
+              weight: 2.5,
+              opacity: 0.6,
+            }}
           />
         ))}
+
         {points.map((p) => (
           <Marker
             key={p.order_id}
@@ -103,6 +120,19 @@ export default function CommandMap({ points, height = "68vh" }: CommandMapProps)
             </Popup>
           </Marker>
         ))}
+
+        {drivers.map((d) => (
+          <Marker key={`drv-${d.driver}`} position={d.position} icon={driverIcon(d.atRisk ? "#f59e0b" : "#22d3ee")}>
+            <Popup>
+              <strong>{d.driver}</strong>
+              <br />
+              {d.path.length - 1} stop{d.path.length - 1 === 1 ? "" : "s"} on route
+              <br />
+              {d.atRisk ? "⚠ at risk" : "on schedule"}
+            </Popup>
+          </Marker>
+        ))}
+
         <Marker position={HUB} icon={hubIcon()}>
           <Popup>
             <strong>SHIPA hub</strong>

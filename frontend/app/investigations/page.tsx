@@ -5,11 +5,11 @@ import { getInvestigations } from "@/lib/api";
 export default async function InvestigationsPage() {
   const rows = await getInvestigations();
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-shipa-ink">Investigations</h1>
-      <div className="overflow-hidden rounded-xl border border-shipa-sky-accent bg-white">
+    <div className="px-8 py-8">
+      <h1 className="mb-6 text-2xl font-bold text-txt">Investigations</h1>
+      <div className="overflow-hidden rounded-xl border border-hairline bg-panel">
         <table className="w-full text-left text-sm">
-          <thead className="bg-shipa-sky text-shipa-ink/70">
+          <thead className="bg-panel-2 text-txt-dim">
             <tr>
               <th className="px-4 py-3 font-semibold">Order</th>
               <th className="px-4 py-3 font-semibold">Type</th>
@@ -20,7 +20,7 @@ export default async function InvestigationsPage() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.investigation_id} className="border-t border-shipa-sky-accent hover:bg-shipa-sky/50">
+              <tr key={r.investigation_id} className="border-t border-hairline hover:bg-panel-2">
                 <td className="px-4 py-3">
                   <Link href={`/orders/${r.order_id}`} className="font-medium text-shipa-blue hover:underline">
                     {r.order_id.slice(0, 8)}
@@ -36,7 +36,7 @@ export default async function InvestigationsPage() {
             ))}
           </tbody>
         </table>
-        {rows.length === 0 && <p className="px-4 py-6 text-sm text-shipa-ink/60">No investigations yet.</p>}
+        {rows.length === 0 && <p className="px-4 py-6 text-sm text-txt-dim">No investigations yet.</p>}
       </div>
     </div>
   );

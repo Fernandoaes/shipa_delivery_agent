@@ -13,4 +13,5 @@ export {
   Warehouse,
   Truck,
   MapPin,
+  ArrowLeft,
 } from "lucide-react";

@@ -4,11 +4,11 @@ import { getCustomers } from "@/lib/api";
 export default async function CustomersPage() {
   const customers = await getCustomers();
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-shipa-ink">Customers</h1>
-      <div className="overflow-hidden rounded-xl border border-shipa-sky-accent bg-white">
+    <div className="px-8 py-8">
+      <h1 className="mb-6 text-2xl font-bold text-txt">Customers</h1>
+      <div className="overflow-hidden rounded-xl border border-hairline bg-panel">
         <table className="w-full text-left text-sm">
-          <thead className="bg-shipa-sky text-shipa-ink/70">
+          <thead className="bg-panel-2 text-txt-dim">
             <tr>
               <th className="px-4 py-3 font-semibold">Name</th>
               <th className="px-4 py-3 font-semibold">Phone</th>
@@ -18,7 +18,7 @@ export default async function CustomersPage() {
           </thead>
           <tbody>
             {customers.map((c) => (
-              <tr key={c.customer_id} className="border-t border-shipa-sky-accent hover:bg-shipa-sky/50">
+              <tr key={c.customer_id} className="border-t border-hairline hover:bg-panel-2">
                 <td className="px-4 py-3">
                   <Link href={`/customers/${c.customer_id}`} className="font-medium text-shipa-blue hover:underline">
                     {c.full_name}

@@ -5,11 +5,11 @@ import { getReschedules } from "@/lib/api";
 export default async function ReschedulesPage() {
   const rows = await getReschedules();
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-shipa-ink">Reschedules</h1>
-      <div className="overflow-hidden rounded-xl border border-shipa-sky-accent bg-white">
+    <div className="px-8 py-8">
+      <h1 className="mb-6 text-2xl font-bold text-txt">Reschedules</h1>
+      <div className="overflow-hidden rounded-xl border border-hairline bg-panel">
         <table className="w-full text-left text-sm">
-          <thead className="bg-shipa-sky text-shipa-ink/70">
+          <thead className="bg-panel-2 text-txt-dim">
             <tr>
               <th className="px-4 py-3 font-semibold">Order</th>
               <th className="px-4 py-3 font-semibold">Requested date</th>
@@ -19,7 +19,7 @@ export default async function ReschedulesPage() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.reschedule_id} className="border-t border-shipa-sky-accent hover:bg-shipa-sky/50">
+              <tr key={r.reschedule_id} className="border-t border-hairline hover:bg-panel-2">
                 <td className="px-4 py-3">
                   <Link href={`/orders/${r.order_id}`} className="font-medium text-shipa-blue hover:underline">
                     {r.order_id.slice(0, 8)}
@@ -34,7 +34,7 @@ export default async function ReschedulesPage() {
             ))}
           </tbody>
         </table>
-        {rows.length === 0 && <p className="px-4 py-6 text-sm text-shipa-ink/60">No reschedules yet.</p>}
+        {rows.length === 0 && <p className="px-4 py-6 text-sm text-txt-dim">No reschedules yet.</p>}
       </div>
     </div>
   );

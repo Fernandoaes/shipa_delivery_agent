@@ -14,11 +14,6 @@
   --color-warn: #f59e0b;
   --color-bad: #ef4444;
   --color-muted: #94a3b8;
-
-  /* Legacy light-theme tokens — kept so not-yet-reworked inner pages stay readable. */
-  --color-shipa-ink: #0b0d12;
-  --color-shipa-sky: #e6f2f9;
-  --color-shipa-sky-accent: #bbd9e8;
 }
 
 :root {
@@ -41,6 +36,10 @@ body {
 .leaflet-container {
   background: #0b0d12 !important;
   font-family: var(--font-geist-mono), monospace;
+}
+/* Lift the muted CARTO dark basemap so streets/coastline read clearly. */
+.cc-tiles {
+  filter: brightness(1.18) contrast(1.22) saturate(1.15);
 }
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {

@@ -15,15 +15,15 @@ export default function OrdersTable({ orders }: { orders: OrderListItem[] }) {
     <div>
       <div className="mb-4 flex items-center gap-3">
         <select value={status} onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-shipa-sky-accent px-3 py-2 text-sm">
+          className="rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm text-txt">
           <option value="">All statuses</option>
           {statuses.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
         </select>
-        <span className="text-sm text-shipa-ink/60">{orders.length} orders · {failed} failed/returned</span>
+        <span className="text-sm text-txt-dim">{orders.length} orders · {failed} failed/returned</span>
       </div>
-      <div className="overflow-hidden rounded-xl border border-shipa-sky-accent bg-white">
+      <div className="overflow-hidden rounded-xl border border-hairline bg-panel">
         <table className="w-full text-left text-sm">
-          <thead className="bg-shipa-sky text-shipa-ink/70">
+          <thead className="bg-panel-2 text-txt-dim">
             <tr>
               <th className="px-4 py-3 font-semibold">Order</th>
               <th className="px-4 py-3 font-semibold">Customer</th>
@@ -35,7 +35,7 @@ export default function OrdersTable({ orders }: { orders: OrderListItem[] }) {
           </thead>
           <tbody>
             {rows.map((o) => (
-              <tr key={o.order_id} className="border-t border-shipa-sky-accent hover:bg-shipa-sky/50">
+              <tr key={o.order_id} className="border-t border-hairline hover:bg-panel-2">
                 <td className="px-4 py-3">
                   <Link href={`/orders/${o.order_id}`} className="font-medium text-shipa-blue hover:underline">{o.twin_order_ref}</Link>
                 </td>
@@ -48,7 +48,7 @@ export default function OrdersTable({ orders }: { orders: OrderListItem[] }) {
             ))}
           </tbody>
         </table>
-        {rows.length === 0 && <p className="px-4 py-6 text-sm text-shipa-ink/60">No orders match.</p>}
+        {rows.length === 0 && <p className="px-4 py-6 text-sm text-txt-dim">No orders match.</p>}
       </div>
     </div>
   );

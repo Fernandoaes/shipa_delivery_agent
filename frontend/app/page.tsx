@@ -6,8 +6,8 @@ import LiveOrdersPanel from "@/components/LiveOrdersPanel";
 import NeedsAttention from "@/components/NeedsAttention";
 import RecentCalls from "@/components/RecentCalls";
 import { Activity, Package, TrendingUp, TriangleAlert } from "@/components/icons";
-import { getCalls, getInsights, getMetrics } from "@/lib/api";
-import { activeOrders, networkRisk } from "@/lib/insights";
+import { getCalls, getInsights, getMetrics, getOrders } from "@/lib/api";
+import { activeOrders, buildDriverRoutes, networkRisk } from "@/lib/insights";
 
 function pct(n: number) {
   return `${Math.round(n * 100)}%`;
@@ -28,13 +28,15 @@ export default async function CommandCenter({
 }) {
   const { range } = await searchParams;
   const selected = RANGES.find((r) => r.label === range) ?? RANGES[1];
-  const [metrics, insights, calls] = await Promise.all([
+  const [metrics, insights, calls, orders] = await Promise.all([
     getMetrics(),
     getInsights(selected.days),
     getCalls(),
+    getOrders(),
   ]);
 
   const active = activeOrders(insights.map_points);
+  const drivers = buildDriverRoutes(orders, insights.map_points);
   const risk = networkRisk(insights.needs_attention);
   const callsPerDay = insights.calls_per_day.map((d) => ({
     label: String(Number(d.date.slice(8, 10))),
@@ -43,8 +45,8 @@ export default async function CommandCenter({
   const intentMix = insights.intent_mix.map((d) => ({ label: d.intent, value: d.count }));
 
   return (
-    <div className="space-y-6 px-6 py-6">
-      <div className="flex items-end justify-between">
+    <div className="space-y-6 px-6 pb-6">
+      <div className="sticky top-0 z-30 -mx-6 flex items-end justify-between border-b border-hairline bg-ink/95 px-6 py-4 backdrop-blur">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-txt">Shipa Delivery</h1>
           <div className="font-mono text-xs uppercase tracking-[0.3em] text-txt-faint">Real-time monitoring</div>
@@ -72,7 +74,7 @@ export default async function CommandCenter({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <CommandMapClient points={insights.map_points} />
+        <CommandMapClient points={insights.map_points} drivers={drivers} />
         <div className="h-[68vh]">
           <LiveOrdersPanel points={active} />
         </div>
