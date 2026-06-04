@@ -14,6 +14,8 @@ function pct(n: number) {
   return `${Math.round(n * 100)}%`;
 }
 
+const WISMO = new Set(["track", "status", "wismo", "where_is_my_order", "tracking"]);
+
 const RANGES: { label: string; days: number }[] = [
   { label: "1d", days: 1 },
   { label: "7d", days: 7 },
@@ -38,6 +40,7 @@ export default async function CommandCenter({
   const intentMix = insights.intent_mix.map((d) => ({
     label: d.intent,
     value: d.count,
+    accent: WISMO.has(d.intent.toLowerCase()),
   }));
   const areaFailures = insights.failures_by_area.map((a) => ({ label: a.area, value: a.count }));
 
