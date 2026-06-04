@@ -1,25 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import FilterSelect from "@/components/filters/FilterSelect";
+import SearchInput from "@/components/filters/SearchInput";
+import { applyFilters, optionsFor, useTableFilters } from "@/components/filters/useTableFilters";
 import StatusBadge from "@/components/StatusBadge";
 import type { OrderListItem } from "@/lib/types";
 
 export default function OrdersTable({ orders }: { orders: OrderListItem[] }) {
-  const [status, setStatus] = useState("");
-  const statuses = useMemo(() => Array.from(new Set(orders.map((o) => o.status))).sort(), [orders]);
-  const rows = status ? orders.filter((o) => o.status === status) : orders;
-  const failed = orders.filter((o) => o.status === "failed" || o.status === "returned").length;
+  const { get, set } = useTableFilters();
+  const rows = useMemo(
+    () =>
+      applyFilters(orders, {
+        query: get("q"),
+        textFields: ["twin_order_ref", "customer_name", "merchant"],
+        equals: { status: get("status"), delivery_area: get("area"), merchant: get("merchant"), assigned_driver: get("driver") },
+      }),
+    [orders, get],
+  );
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-3">
-        <select value={status} onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm text-txt">
-          <option value="">All statuses</option>
-          {statuses.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-        </select>
-        <span className="text-sm text-txt-dim">{orders.length} orders · {failed} failed/returned</span>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <SearchInput value={get("q")} onChange={(v) => set("q", v)} placeholder="Order, customer, merchant…" />
+        <FilterSelect value={get("status")} onChange={(v) => set("status", v)} options={optionsFor(orders, "status")} allLabel="All statuses" />
+        <FilterSelect value={get("area")} onChange={(v) => set("area", v)} options={optionsFor(orders, "delivery_area")} allLabel="All areas" />
+        <FilterSelect value={get("merchant")} onChange={(v) => set("merchant", v)} options={optionsFor(orders, "merchant")} allLabel="All merchants" />
+        <FilterSelect value={get("driver")} onChange={(v) => set("driver", v)} options={optionsFor(orders, "assigned_driver")} allLabel="All drivers" />
+        <span className="text-sm text-txt-dim">{rows.length} of {orders.length}</span>
       </div>
       <div className="overflow-hidden rounded-xl border border-hairline bg-panel">
         <table className="w-full text-left text-sm">
