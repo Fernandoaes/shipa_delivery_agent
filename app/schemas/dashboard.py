@@ -169,10 +169,21 @@ class DispositionCount(BaseModel):
     count: int
 
 
+class ChannelDay(BaseModel):
+    date: dt.date
+    channels: dict[str, int]
+
+
+class AreaCount(BaseModel):
+    area: str
+    count: int
+
+
 class NeedsAttention(BaseModel):
     open_escalations: int
+    overdue_callbacks: int
     pending_reschedules: int
-    failed_orders: int
+    pending_address_flags: int
 
 
 class MapPoint(BaseModel):
@@ -185,8 +196,9 @@ class MapPoint(BaseModel):
 
 
 class Insights(BaseModel):
-    calls_per_day: list[DayCount]
+    interactions_per_day: list[ChannelDay]
     intent_mix: list[IntentCount]
     disposition_mix: list[DispositionCount]
+    failures_by_area: list[AreaCount]
     needs_attention: NeedsAttention
     map_points: list[MapPoint]
