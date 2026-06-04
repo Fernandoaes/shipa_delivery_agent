@@ -190,6 +190,9 @@ class MapPoint(BaseModel):
     delivery_area: str | None
     delivery_lat: float
     delivery_lng: float
+    merchant: str
+    merchant_lat: float | None
+    merchant_lng: float | None
 
 
 class Insights(BaseModel):

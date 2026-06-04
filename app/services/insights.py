@@ -69,6 +69,9 @@ def compute_insights(db: Session, days: int = 7) -> dict:
             "delivery_area": o.delivery_area,
             "delivery_lat": o.delivery_lat,
             "delivery_lng": o.delivery_lng,
+            "merchant": o.merchant,
+            "merchant_lat": o.merchant_lat,
+            "merchant_lng": o.merchant_lng,
         }
         for o in map_orders
     ]

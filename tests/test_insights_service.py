@@ -100,3 +100,19 @@ def test_map_points_only_active_with_coords(db):
     assert order_no_coords.twin_order_ref not in refs   # coords absent -> excluded
     assert all(p["status"] in ("out_for_delivery", "pending", "failed", "rescheduled")
                for p in out["map_points"])
+
+
+def test_map_points_include_merchant_origin(db):
+    _seed(db)
+    order = db.query(Order).filter_by(twin_order_ref="TWIN-1001").one()
+    order.status = "out_for_delivery"
+    order.delivery_lat, order.delivery_lng = 25.1, 55.2
+    order.merchant = "Noon"
+    order.merchant_lat, order.merchant_lng = 24.92, 55.16
+    db.flush()
+
+    out = compute_insights(db)
+    pt = next(p for p in out["map_points"] if p["twin_order_ref"] == "TWIN-1001")
+    assert pt["merchant"] == "Noon"
+    assert pt["merchant_lat"] == 24.92
+    assert pt["merchant_lng"] == 55.16
