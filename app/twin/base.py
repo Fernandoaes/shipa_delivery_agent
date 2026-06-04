@@ -22,9 +22,9 @@ class OrderRecord:
     merchant_lng: float | None = None
     delivery_lat: float | None = None
     delivery_lng: float | None = None
-    attempt_count: int = 1
-    delivered_at: "dt.datetime | None" = None
-    sla_due_at: "dt.datetime | None" = None
+    attempt_count: int | None = None
+    delivered_at: dt.datetime | None = None
+    sla_due_at: dt.datetime | None = None
 
 
 class TwinClient(Protocol):
