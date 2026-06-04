@@ -40,6 +40,34 @@ export function buildMerchantNodes(points: MapPoint[]): MerchantNode[] {
   return nodes;
 }
 
+const ARC_CURVATURE = 0.18; // perpendicular bow as a fraction of chord length
+const ARC_SEGMENTS = 16;
+
+// Densify a hub→stops path into quadratic-bezier arcs so routes read as dispatched
+// curves rather than a hub-and-spoke star. Pure geometry, no routing engine.
+export function arcPath(path: LatLng[]): LatLng[] {
+  if (path.length < 2) return path;
+  const out: LatLng[] = [path[0]];
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i];
+    const b = path[i + 1];
+    const mx = (a[0] + b[0]) / 2;
+    const my = (a[1] + b[1]) / 2;
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const cx = mx - dy * ARC_CURVATURE; // control point offset perpendicular to chord
+    const cy = my + dx * ARC_CURVATURE;
+    for (let s = 1; s <= ARC_SEGMENTS; s++) {
+      const t = s / ARC_SEGMENTS;
+      const u = 1 - t;
+      const lat = u * u * a[0] + 2 * u * t * cx + t * t * b[0];
+      const lng = u * u * a[1] + 2 * u * t * cy + t * t * b[1];
+      out.push([lat, lng]);
+    }
+  }
+  return out;
+}
+
 export function activeOrders(points: MapPoint[]): MapPoint[] {
   return points.filter((p) => ACTIVE.has(p.status));
 }

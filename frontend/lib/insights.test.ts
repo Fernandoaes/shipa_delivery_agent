@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMerchantNodes } from "@/lib/insights";
+import { arcPath, buildMerchantNodes, type LatLng } from "@/lib/insights";
 import type { MapPoint } from "@/lib/types";
 
 function pt(overrides: Partial<MapPoint>): MapPoint {
@@ -44,5 +44,32 @@ describe("buildMerchantNodes", () => {
       pt({ merchant: "NoCoords", merchant_lat: null, merchant_lng: null }),
     ]);
     expect(nodes).toHaveLength(0);
+  });
+});
+
+describe("arcPath", () => {
+  it("returns the input unchanged for paths shorter than 2 points", () => {
+    expect(arcPath([])).toEqual([]);
+    const one: LatLng[] = [[25.0, 55.0]];
+    expect(arcPath(one)).toEqual(one);
+  });
+
+  it("preserves the original endpoints", () => {
+    const out = arcPath([
+      [25.0, 55.0],
+      [25.2, 55.4],
+    ]);
+    expect(out[0]).toEqual([25.0, 55.0]);
+    expect(out[out.length - 1]).toEqual([25.2, 55.4]);
+  });
+
+  it("bows the segment off the straight chord", () => {
+    const a: LatLng = [25.0, 55.0];
+    const b: LatLng = [25.0, 55.4]; // horizontal chord (constant lat)
+    const out = arcPath([a, b]);
+    const mid = out[Math.floor(out.length / 2)];
+    // a curved segment must leave the constant-lat line somewhere
+    expect(out.some((p) => Math.abs(p[0] - 25.0) > 1e-6)).toBe(true);
+    expect(mid[0]).not.toBe(25.0);
   });
 });
