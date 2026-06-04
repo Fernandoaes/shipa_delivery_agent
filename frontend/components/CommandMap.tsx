@@ -113,7 +113,7 @@ export default function CommandMap({ points, drivers = [], height = "68vh" }: Co
         {drivers.map((d) => (
           <Polyline
             key={`route-${d.driver}`}
-            positions={arcPath(d.path)}
+            positions={arcPath([HUB, d.position, ...d.path.slice(1)])}
             pathOptions={{
               color: d.atRisk ? "#f59e0b" : "#22d3ee",
               weight: 2.5,
