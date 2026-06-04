@@ -77,7 +77,7 @@ export default function CommandMap({ points, drivers = [], height = "68vh" }: Co
   const health = healthCounts(points);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-hairline">
+    <div className="relative isolate overflow-hidden rounded-2xl border border-hairline">
       <MapContainer
         center={HUB}
         zoom={11}
