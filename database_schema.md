@@ -16,11 +16,12 @@ One row per customer, keyed for caller-ID lookup. If Twin is order-centric and h
 | `customer_id` | uuid | **PK**, default gen | our internal id |
 | `twin_customer_ref` | text | unique, nullable | Twin's id if it exists |
 | `full_name` | text | not null | |
-| `primary_phone` | text | not null, **indexed** | E.164; main lookup key |
+| `primary_phone` | text | not null, **unique**, **indexed** | E.164; main lookup key |
 | `alt_phone` | text | nullable | |
 | `language_pref` | text | nullable | `en` / `ar`, if known |
 | `last_synced_at` | timestamptz | not null | |
 
+Constraint: `uq_customers_primary_phone` unique on `primary_phone` (one customer per number).
 Index: `idx_customers_primary_phone` on `primary_phone`.
 
 ### `orders`
@@ -39,6 +40,10 @@ One row per order/shipment.
 | `otp_code` | text | nullable | collection code; treat as sensitive |
 | `assigned_driver` | text | nullable | |
 | `expected_pieces` | int | nullable | helps with "wrong items" branch |
+| `merchant_lat` | float | nullable | pickup coords; powers the deliveries map |
+| `merchant_lng` | float | nullable | |
+| `delivery_lat` | float | nullable | drop-off coords |
+| `delivery_lng` | float | nullable | |
 | `last_synced_at` | timestamptz | not null | |
 
 Indexes: unique on `twin_order_ref`; `idx_orders_customer_id` on `customer_id`.
@@ -96,7 +101,7 @@ One row per verification attempt (so you can see retries and tune pass criteria)
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
 | `reschedule_id` | uuid | **PK** | |
-| `call_id` | uuid | **FK → calls**, not null | |
+| `call_id` | uuid | **FK → calls**, not null, **unique** | one reschedule per call |
 | `order_id` | uuid | **FK → orders**, not null | |
 | `requested_date` | date | not null | validated future working day |
 | `requested_window` | text | nullable | |
@@ -105,15 +110,13 @@ One row per verification attempt (so you can see retries and tune pass criteria)
 | `synced_to_twin_at` | timestamptz | nullable | |
 | `created_at` | timestamptz | not null | |
 
-Add a unique partial index on `(call_id)` if you want one reschedule per call (idempotency).
-
 ### `investigations`
 For "delivered but not received". A recorder, never an adjudicator.
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
 | `investigation_id` | uuid | **PK** | |
-| `call_id` | uuid | **FK → calls**, not null | |
+| `call_id` | uuid | **FK → calls**, not null, **unique** | one investigation per call |
 | `order_id` | uuid | **FK → orders**, not null | |
 | `type` | text | not null | `not_received` (extensible) |
 | `status` | text | not null, default `open` | `open` · `in_progress` · `resolved` · `closed` |
@@ -127,7 +130,7 @@ For "delivered but not received". A recorder, never an adjudicator.
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
 | `escalation_id` | uuid | **PK** | |
-| `call_id` | uuid | **FK → calls**, not null | |
+| `call_id` | uuid | **FK → calls**, not null, **unique** | one escalation per call |
 | `order_id` | uuid | **FK → orders**, nullable | |
 | `category` | text | not null | `cancel` · `complaint` · `unclassified` · `hostile` · `verification_failed` |
 | `reason` | text | nullable | free text |
@@ -140,11 +143,23 @@ For "delivered but not received". A recorder, never an adjudicator.
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
 | `flag_id` | uuid | **PK** | |
-| `call_id` | uuid | **FK → calls**, not null | |
+| `call_id` | uuid | **FK → calls**, not null, **unique** | one address flag per call |
 | `order_id` | uuid | **FK → orders**, not null | |
 | `original_address` | text | not null | snapshot at call time |
 | `correction_text` | text | not null | what the customer said |
 | `status` | text | not null, default `pending` | `pending` · `verified` · `applied` · `rejected` |
+| `created_at` | timestamptz | not null | |
+
+### `merchant_referrals`
+For the `referred_to_merchant` disposition: issues Shipa can't resolve and hands back to the merchant.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| `referral_id` | uuid | **PK** | |
+| `call_id` | uuid | **FK → calls**, not null, **unique** | one referral per call |
+| `order_id` | uuid | **FK → orders**, not null | |
+| `reason` | text | nullable | free text |
+| `status` | text | not null, default `open` | `open` · `resolved` |
 | `created_at` | timestamptz | not null | |
 
 ### `fallback_messages`
@@ -165,8 +180,8 @@ SMS/WhatsApp sent when a call can't complete (mainly the outbound no-answer path
 ## Relationships at a glance
 - `customers` 1 ─ ∞ `orders` (a customer has many orders)
 - `customers` 1 ─ ∞ `calls`, `orders` 1 ─ ∞ `calls`
-- `calls` 1 ─ ∞ each operational table (`verifications`, `reschedules`, `investigations`, `escalations`, `address_flags`, `fallback_messages`)
-- `orders` also 1 ─ ∞ `reschedules`, `investigations`, `address_flags` (so ops can view by order or by call)
+- `calls` 1 ─ ∞ each operational table (`verifications`, `reschedules`, `investigations`, `escalations`, `address_flags`, `merchant_referrals`, `fallback_messages`). All but `verifications` and `fallback_messages` are constrained to **at most one row per call**.
+- `orders` also 1 ─ ∞ `reschedules`, `investigations`, `address_flags`, `merchant_referrals` (so ops can view by order or by call)
 
 ## Twin sync notes
 - Upsert `orders` on `twin_order_ref`; refresh `status`, `delivery_window`, `otp_code`, `assigned_driver`.

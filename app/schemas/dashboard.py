@@ -52,6 +52,38 @@ class EscalationSummary(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class MerchantReferralSummary(BaseModel):
+    referral_id: uuid.UUID
+    call_id: uuid.UUID
+    order_id: uuid.UUID
+    reason: str | None
+    status: str
+    created_at: dt.datetime
+    model_config = {"from_attributes": True}
+
+
+class AddressFlagSummary(BaseModel):
+    flag_id: uuid.UUID
+    call_id: uuid.UUID
+    order_id: uuid.UUID
+    original_address: str
+    correction_text: str
+    status: str
+    created_at: dt.datetime
+    model_config = {"from_attributes": True}
+
+
+class FallbackMessageSummary(BaseModel):
+    message_id: uuid.UUID
+    call_id: uuid.UUID | None
+    order_id: uuid.UUID
+    channel: str
+    content_type: str
+    status: str
+    sent_at: dt.datetime | None
+    model_config = {"from_attributes": True}
+
+
 class Metrics(BaseModel):
     total_calls: int
     first_attempt_rate: float

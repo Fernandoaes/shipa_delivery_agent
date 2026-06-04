@@ -1,8 +1,11 @@
 import datetime as dt
+from typing import Literal
 
 from pydantic import BaseModel
 
 from app.schemas.calls import DispositionLiteral, IntentLiteral
+
+EscalationCategory = Literal["cancel", "complaint", "unclassified", "hostile", "verification_failed"]
 
 
 class IngestOrder(BaseModel):
@@ -53,3 +56,94 @@ class CallSyncRequest(BaseModel):
 
 class CallSyncResponse(BaseModel):
     upserted: int
+
+
+class SyncResponse(BaseModel):
+    upserted: int
+
+
+# Action sync items: keyed on happyrobot_call_id (+ twin_order_ref → order).
+# No verified-call gate and no future-working-day rule — these may carry completed/historical actions.
+
+class RescheduleSyncItem(BaseModel):
+    happyrobot_call_id: str
+    twin_order_ref: str
+    requested_date: dt.date
+    requested_window: str | None = None
+    reason: str | None = None
+    status: str = "requested"
+    synced_to_twin_at: dt.datetime | None = None
+    created_at: dt.datetime | None = None
+
+
+class RescheduleSyncRequest(BaseModel):
+    reschedules: list[RescheduleSyncItem]
+
+
+class InvestigationSyncItem(BaseModel):
+    happyrobot_call_id: str
+    twin_order_ref: str
+    type: str = "not_received"
+    status: str = "open"
+    callback_due_at: dt.datetime | None = None
+    opened_at: dt.datetime | None = None
+    resolved_at: dt.datetime | None = None
+    resolution_notes: str | None = None
+    assigned_to: str | None = None
+
+
+class InvestigationSyncRequest(BaseModel):
+    investigations: list[InvestigationSyncItem]
+
+
+class EscalationSyncItem(BaseModel):
+    happyrobot_call_id: str
+    twin_order_ref: str | None = None  # escalations may have no order
+    category: EscalationCategory
+    reason: str | None = None
+    status: str = "open"
+    assigned_to: str | None = None
+    created_at: dt.datetime | None = None
+    resolved_at: dt.datetime | None = None
+
+
+class EscalationSyncRequest(BaseModel):
+    escalations: list[EscalationSyncItem]
+
+
+class MerchantReferralSyncItem(BaseModel):
+    happyrobot_call_id: str
+    twin_order_ref: str
+    reason: str | None = None
+    status: str = "open"
+    created_at: dt.datetime | None = None
+
+
+class MerchantReferralSyncRequest(BaseModel):
+    merchant_referrals: list[MerchantReferralSyncItem]
+
+
+class AddressFlagSyncItem(BaseModel):
+    happyrobot_call_id: str
+    twin_order_ref: str
+    correction_text: str
+    original_address: str | None = None  # defaults to the order's address if omitted
+    status: str = "pending"
+    created_at: dt.datetime | None = None
+
+
+class AddressFlagSyncRequest(BaseModel):
+    address_flags: list[AddressFlagSyncItem]
+
+
+class FallbackMessageSyncItem(BaseModel):
+    happyrobot_call_id: str
+    twin_order_ref: str
+    channel: Literal["sms", "whatsapp"]
+    content_type: Literal["tracking_link", "notice"]  # never "otp"
+    status: str = "queued"
+    sent_at: dt.datetime | None = None
+
+
+class FallbackMessageSyncRequest(BaseModel):
+    fallback_messages: list[FallbackMessageSyncItem]
