@@ -2,8 +2,11 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.models import Escalation, Investigation, Order, Reschedule
-from app.schemas.dashboard import CustomerBrief, OrderDetail, OrderListItem
+from app.models import AddressFlag, Call, Escalation, Investigation, Order, Reschedule
+from app.schemas.dashboard import (
+    AddressFlagSummary, CallSummary, CustomerBrief, EscalationSummary, InvestigationSummary,
+    OrderDetail, OrderListItem, RescheduleSummary,
+)
 from app.schemas.twin import TwinOrderRead
 
 
@@ -56,11 +59,38 @@ def get_order_detail(db: Session, order_id: uuid.UUID) -> OrderDetail | None:
     o = db.get(Order, order_id)
     if o is None:
         return None
+    calls = (
+        db.query(Call).filter(Call.order_id == order_id).order_by(Call.started_at.desc()).all()
+    )
+    escalations = (
+        db.query(Escalation).filter(Escalation.order_id == order_id)
+        .order_by(Escalation.created_at.desc()).all()
+    )
+    investigations = (
+        db.query(Investigation).filter(Investigation.order_id == order_id)
+        .order_by(Investigation.opened_at.desc()).all()
+    )
+    reschedules = (
+        db.query(Reschedule).filter(Reschedule.order_id == order_id)
+        .order_by(Reschedule.created_at.desc()).all()
+    )
+    address_flags = (
+        db.query(AddressFlag).filter(AddressFlag.order_id == order_id)
+        .order_by(AddressFlag.created_at.desc()).all()
+    )
     return OrderDetail(
         order_id=o.order_id, twin_order_ref=o.twin_order_ref, merchant=o.merchant,
         status=o.status, delivery_address=o.delivery_address, delivery_area=o.delivery_area,
         delivery_window=o.delivery_window, assigned_driver=o.assigned_driver,
-        expected_pieces=o.expected_pieces, merchant_lat=o.merchant_lat, merchant_lng=o.merchant_lng,
-        delivery_lat=o.delivery_lat, delivery_lng=o.delivery_lng, last_synced_at=o.last_synced_at,
+        expected_pieces=o.expected_pieces, attempt_count=o.attempt_count,
+        delivered_at=o.delivered_at, sla_due_at=o.sla_due_at,
+        merchant_lat=o.merchant_lat, merchant_lng=o.merchant_lng,
+        delivery_lat=o.delivery_lat, delivery_lng=o.delivery_lng,
+        last_synced_at=o.last_synced_at,
         customer=CustomerBrief.model_validate(o.customer),
+        calls=[CallSummary.model_validate(c) for c in calls],
+        escalations=[EscalationSummary.model_validate(e) for e in escalations],
+        investigations=[InvestigationSummary.model_validate(i) for i in investigations],
+        reschedules=[RescheduleSummary.model_validate(r) for r in reschedules],
+        address_flags=[AddressFlagSummary.model_validate(f) for f in address_flags],
     )
