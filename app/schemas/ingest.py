@@ -1,14 +1,25 @@
 import datetime as dt
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.schemas.calls import DispositionLiteral, IntentLiteral
 
 EscalationCategory = Literal["cancel", "complaint", "unclassified", "hostile", "verification_failed"]
 
 
-class IngestOrder(BaseModel):
+class _BlankToNone(BaseModel):
+    """Callers (e.g. form tools) often send "" for unfilled fields; treat blank as absent."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _blank_to_none(cls, data):
+        if isinstance(data, dict):
+            return {k: (None if isinstance(v, str) and v.strip() == "" else v) for k, v in data.items()}
+        return data
+
+
+class IngestOrder(_BlankToNone):
     twin_order_ref: str
     customer_name: str
     customer_phone: str
@@ -32,7 +43,7 @@ class IngestResponse(BaseModel):
     upserted: int
 
 
-class CallSyncItem(BaseModel):
+class CallSyncItem(_BlankToNone):
     happyrobot_call_id: str  # upsert key
     direction: str = "inbound"
     agent_type: str = "inbound_exception"
@@ -65,7 +76,7 @@ class SyncResponse(BaseModel):
 # Action sync items: keyed on happyrobot_call_id (+ twin_order_ref → order).
 # No verified-call gate and no future-working-day rule — these may carry completed/historical actions.
 
-class RescheduleSyncItem(BaseModel):
+class RescheduleSyncItem(_BlankToNone):
     happyrobot_call_id: str
     twin_order_ref: str
     requested_date: dt.date
@@ -80,7 +91,7 @@ class RescheduleSyncRequest(BaseModel):
     reschedules: list[RescheduleSyncItem]
 
 
-class InvestigationSyncItem(BaseModel):
+class InvestigationSyncItem(_BlankToNone):
     happyrobot_call_id: str
     twin_order_ref: str
     type: str = "not_received"
@@ -96,7 +107,7 @@ class InvestigationSyncRequest(BaseModel):
     investigations: list[InvestigationSyncItem]
 
 
-class EscalationSyncItem(BaseModel):
+class EscalationSyncItem(_BlankToNone):
     happyrobot_call_id: str
     twin_order_ref: str | None = None  # escalations may have no order
     category: EscalationCategory
@@ -111,7 +122,7 @@ class EscalationSyncRequest(BaseModel):
     escalations: list[EscalationSyncItem]
 
 
-class MerchantReferralSyncItem(BaseModel):
+class MerchantReferralSyncItem(_BlankToNone):
     happyrobot_call_id: str
     twin_order_ref: str
     reason: str | None = None
@@ -123,7 +134,7 @@ class MerchantReferralSyncRequest(BaseModel):
     merchant_referrals: list[MerchantReferralSyncItem]
 
 
-class AddressFlagSyncItem(BaseModel):
+class AddressFlagSyncItem(_BlankToNone):
     happyrobot_call_id: str
     twin_order_ref: str
     correction_text: str
@@ -136,7 +147,7 @@ class AddressFlagSyncRequest(BaseModel):
     address_flags: list[AddressFlagSyncItem]
 
 
-class FallbackMessageSyncItem(BaseModel):
+class FallbackMessageSyncItem(_BlankToNone):
     happyrobot_call_id: str
     twin_order_ref: str
     channel: Literal["sms", "whatsapp"]

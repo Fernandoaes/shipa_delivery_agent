@@ -98,6 +98,19 @@ def test_fallback_message_sync_is_idempotent_per_channel_type(client):
     assert len(msgs) == 1 and msgs[0]["status"] == "sent"
 
 
+def test_blank_strings_are_coerced_to_none(client):
+    _seed_order(client)
+    # caller tool sends "" for unfilled optional fields — must be treated as absent, not rejected
+    payload = {"reschedules": [{
+        "happyrobot_call_id": "HR-BLANK", "twin_order_ref": "TWIN-7001",
+        "requested_date": "2020-03-04", "requested_window": "", "reason": "",
+        "synced_to_twin_at": "",
+    }]}
+    # without coercion the blank "" values would 422; 200 proves they were read as None
+    assert client.post("/reschedules/sync", headers=WH, json=payload).status_code == 200
+    assert len(client.get("/reschedules", headers=API).json()) == 1
+
+
 def test_action_sync_auto_creates_call_and_links_order(client):
     _seed_order(client)
     payload = {"reschedules": [{
