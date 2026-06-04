@@ -47,7 +47,7 @@ export default function DeliveryMap({
   const points = [merchantLatLng, deliveryLatLng].filter(Boolean) as LatLng[];
   if (points.length === 0) {
     return (
-      <div className="flex h-[420px] items-center justify-center rounded-xl border border-shipa-sky-accent bg-shipa-sky text-shipa-ink/60">
+      <div className="flex h-[420px] items-center justify-center rounded-2xl border border-hairline bg-panel text-txt-dim">
         Coordinates unavailable for this order.
       </div>
     );
@@ -57,15 +57,15 @@ export default function DeliveryMap({
       center={points[0]}
       zoom={12}
       scrollWheelZoom={false}
-      style={{ height: "420px", width: "100%", borderRadius: "0.75rem" }}
+      style={{ height: "420px", width: "100%", borderRadius: "0.75rem", background: "#0b0d12" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         subdomains="abcd"
       />
       {merchantLatLng && (
-        <Marker position={merchantLatLng} icon={pin("#0b0d12")}>
+        <Marker position={merchantLatLng} icon={pin("#2b3ff2")}>
           <Popup>
             <strong>{merchant}</strong>
             <br />
@@ -74,7 +74,7 @@ export default function DeliveryMap({
         </Marker>
       )}
       {deliveryLatLng && (
-        <Marker position={deliveryLatLng} icon={pin("#2b3ff2")}>
+        <Marker position={deliveryLatLng} icon={pin("#3b82f6")}>
           <Popup>
             <strong>Delivery</strong>
             <br />

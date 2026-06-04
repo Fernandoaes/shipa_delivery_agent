@@ -6,7 +6,7 @@ import type { DeliveryMapProps } from "@/components/DeliveryMap";
 const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[420px] items-center justify-center rounded-xl border border-shipa-sky-accent bg-shipa-sky text-shipa-ink/60">
+    <div className="flex h-[420px] items-center justify-center rounded-2xl border border-hairline bg-panel text-txt-dim">
       Loading map…
     </div>
   ),
