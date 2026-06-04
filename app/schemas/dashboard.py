@@ -47,6 +47,8 @@ class RescheduleSummary(BaseModel):
 class EscalationSummary(BaseModel):
     escalation_id: uuid.UUID
     call_id: uuid.UUID
+    order_id: uuid.UUID | None = None
+    twin_order_ref: str | None = None
     category: str
     reason: str | None = None
     status: str

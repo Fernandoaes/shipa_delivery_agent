@@ -50,7 +50,20 @@ def list_reschedules(db: Session = Depends(get_db)):
 
 @router.get("/escalations", response_model=list[EscalationSummary])
 def list_escalations(db: Session = Depends(get_db)):
-    return db.query(Escalation).order_by(Escalation.created_at.desc()).all()
+    rows = db.query(Escalation).order_by(Escalation.created_at.desc()).all()
+    order_ids = {r.order_id for r in rows if r.order_id is not None}
+    refs = (
+        dict(db.query(Order.order_id, Order.twin_order_ref).filter(Order.order_id.in_(order_ids)).all())
+        if order_ids else {}
+    )
+    return [
+        EscalationSummary(
+            escalation_id=r.escalation_id, call_id=r.call_id, order_id=r.order_id,
+            twin_order_ref=refs.get(r.order_id), category=r.category, reason=r.reason,
+            status=r.status, created_at=r.created_at,
+        )
+        for r in rows
+    ]
 
 
 @router.get("/merchant-referrals", response_model=list[MerchantReferralSummary])
