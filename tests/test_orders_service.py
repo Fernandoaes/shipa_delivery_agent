@@ -62,3 +62,26 @@ def test_get_order_detail_clean_order_has_empty_related(db):
     assert detail.escalations == []
     assert detail.reschedules == []
     assert detail.address_flags == []
+
+
+def test_list_orders_issue_from_open_escalation(db):
+    orders = upsert_orders(db, MockTwinClient().fetch_all())
+    db.flush()
+    order = next(o for o in orders if o.twin_order_ref == "TWIN-1001")
+    call = Call(direction="inbound", agent_type="inbound_support", verification_status="passed",
+                order_id=order.order_id, customer_id=order.customer_id, started_at=dt.datetime.now())
+    db.add(call)
+    db.flush()
+    db.add(Escalation(call_id=call.call_id, order_id=order.order_id, category="refund",
+                      reason="parcel damaged", status="open", created_at=dt.datetime.now()))
+    db.flush()
+    item = next(i for i in list_orders(db) if i.twin_order_ref == "TWIN-1001")
+    assert item.issue == "parcel damaged"
+    assert item.attempt_count == order.attempt_count
+
+
+def test_list_orders_issue_none_when_clean(db):
+    upsert_orders(db, MockTwinClient().fetch_all())
+    db.flush()
+    items = list_orders(db)
+    assert all(i.issue is None for i in items if i.attempt_count == 1)

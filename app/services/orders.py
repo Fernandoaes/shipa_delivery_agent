@@ -42,17 +42,40 @@ def list_twin_orders(db: Session) -> list[TwinOrderRead]:
     return out
 
 
-def _order_list_item(o: Order) -> OrderListItem:
+def _derive_issue(o: Order, esc_by_order: dict, flag_by_order: dict) -> str | None:
+    if o.order_id in esc_by_order:
+        return esc_by_order[o.order_id]
+    if o.order_id in flag_by_order:
+        return f"Address: {flag_by_order[o.order_id]}"
+    if o.attempt_count > 1:
+        return f"Attempt {o.attempt_count}"
+    return None
+
+
+def _order_list_item(o: Order, esc_by_order: dict | None = None, flag_by_order: dict | None = None) -> OrderListItem:
+    esc_by_order = esc_by_order or {}
+    flag_by_order = flag_by_order or {}
     return OrderListItem(
         order_id=o.order_id, twin_order_ref=o.twin_order_ref, merchant=o.merchant,
         status=o.status, delivery_area=o.delivery_area, delivery_window=o.delivery_window,
         assigned_driver=o.assigned_driver, customer_name=o.customer.full_name,
+        attempt_count=o.attempt_count, issue=_derive_issue(o, esc_by_order, flag_by_order),
     )
 
 
 def list_orders(db: Session) -> list[OrderListItem]:
     orders = db.query(Order).order_by(Order.twin_order_ref).all()
-    return [_order_list_item(o) for o in orders]
+    esc_by_order = {
+        oid: (reason or category)
+        for oid, reason, category in db.query(
+            Escalation.order_id, Escalation.reason, Escalation.category
+        ).filter(Escalation.status == "open", Escalation.order_id.isnot(None)).all()
+    }
+    flag_by_order = dict(
+        db.query(AddressFlag.order_id, AddressFlag.correction_text)
+        .filter(AddressFlag.status == "pending").all()
+    )
+    return [_order_list_item(o, esc_by_order, flag_by_order) for o in orders]
 
 
 def get_order_detail(db: Session, order_id: uuid.UUID) -> OrderDetail | None:

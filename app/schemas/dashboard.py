@@ -117,6 +117,8 @@ class OrderListItem(BaseModel):
     delivery_window: str | None
     assigned_driver: str | None
     customer_name: str
+    attempt_count: int = 1
+    issue: str | None = None
 
 
 class OrderDetail(BaseModel):
