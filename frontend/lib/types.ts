@@ -33,9 +33,21 @@ export type InvestigationSummary = {
   opened_at: string;
 };
 
+export type AddressFlagSummary = {
+  flag_id: string;
+  call_id: string;
+  order_id: string;
+  original_address: string;
+  correction_text: string;
+  status: string;
+  created_at: string;
+};
+
 export type EscalationSummary = {
   escalation_id: string;
   call_id: string;
+  order_id: string | null;
+  twin_order_ref: string | null;
   category: string;
   reason: string | null;
   status: string;
@@ -92,6 +104,8 @@ export type OrderListItem = {
   delivery_window: string | null;
   assigned_driver: string | null;
   customer_name: string;
+  attempt_count: number;
+  issue: string | null;
 };
 
 export type CustomerBrief = {
@@ -111,12 +125,20 @@ export type OrderDetail = {
   delivery_window: string | null;
   assigned_driver: string | null;
   expected_pieces: number | null;
+  attempt_count: number;
+  delivered_at: string | null;
+  sla_due_at: string | null;
   merchant_lat: number | null;
   merchant_lng: number | null;
   delivery_lat: number | null;
   delivery_lng: number | null;
   last_synced_at: string;
   customer: CustomerBrief;
+  calls: CallSummary[];
+  escalations: EscalationSummary[];
+  investigations: InvestigationSummary[];
+  reschedules: RescheduleSummary[];
+  address_flags: AddressFlagSummary[];
 };
 
 export type CustomerListItem = {
