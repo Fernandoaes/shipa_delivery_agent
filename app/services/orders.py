@@ -42,13 +42,13 @@ def list_twin_orders(db: Session) -> list[TwinOrderRead]:
     return out
 
 
+# Only flagged problems become an issue (escalation / address correction); elevated
+# attempt_count is a separate dimension the frontend renders on its own.
 def _derive_issue(o: Order, esc_by_order: dict, flag_by_order: dict) -> str | None:
     if o.order_id in esc_by_order:
         return esc_by_order[o.order_id]
     if o.order_id in flag_by_order:
         return f"Address: {flag_by_order[o.order_id]}"
-    if o.attempt_count > 1:
-        return f"Attempt {o.attempt_count}"
     return None
 
 
@@ -111,6 +111,7 @@ def get_order_detail(db: Session, order_id: uuid.UUID) -> OrderDetail | None:
         delivery_lat=o.delivery_lat, delivery_lng=o.delivery_lng,
         last_synced_at=o.last_synced_at,
         customer=CustomerBrief.model_validate(o.customer),
+        # customer_name/twin_order_ref stay None here — the order page already shows them in context
         calls=[CallSummary.model_validate(c) for c in calls],
         escalations=[EscalationSummary.model_validate(e) for e in escalations],
         investigations=[InvestigationSummary.model_validate(i) for i in investigations],
