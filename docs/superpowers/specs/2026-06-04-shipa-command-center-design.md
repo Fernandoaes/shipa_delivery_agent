@@ -27,7 +27,7 @@ Customer-supplied screenshot: dark Mapbox-style UAE/Dubai map; left icon rail wi
   - `--shipa-ink #0b0d12` (app bg), `--shipa-panel #11141b`, `--shipa-panel-2 #161a22`, hairline border `rgba(255,255,255,.08)`.
   - Accent `--shipa-blue #2b3ff2`; status: `--ok #34d399`, `--warn #f59e0b`, `--bad #ef4444`, `--muted #94a3b8`.
   - Text: primary `#e6e9ef`, secondary `rgba(230,233,239,.6)`.
-- **Typography:** wire the dangling `--font-geist-sans` / `--font-geist-mono` to actual Geist fonts via `next/font` in `layout.tsx`. Display = Geist Sans; data/labels/KPIs = Geist Mono (uppercase, letter-spaced for labels).
+- **Typography:** load Shipa's real brand font **Jost** (verified from shipa.com CSS — `@font-face` Jost Light/Regular/Medium/SemiBold; geometric Futura-style sans) via `next/font/google` as `--font-jost` → `--font-sans`. Data/labels/KPIs/map use **Geist Mono** (`--font-mono`) for the command-center telemetry feel. Both are variable fonts confirmed present in Next's Google font data.
 
 ### 2. Command-center home (`/`)
 Replaces current Overview layout.
