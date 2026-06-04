@@ -30,22 +30,21 @@ def compute_metrics(db: Session, days: int = 7) -> dict:
     active = [o for o in orders if o.status in _ACTIVE]
 
     at_risk_ids = {o.order_id for o in at_risk}
+    # Recovery is lifetime: an at-risk order counts as recovered if it EVER got a reschedule/address-fix.
     rescheduled_ids = {r.order_id for r in db.query(Reschedule.order_id).all()}
     flagged_ids = {f.order_id for f in db.query(AddressFlag.order_id).all()}
     recovered = at_risk_ids & (rescheduled_ids | flagged_ids)
 
-    def rate(part, whole: int) -> float:
-        whole = whole if isinstance(whole, int) else len(whole)
-        n = part if isinstance(part, int) else len(part)
-        return round(n / whole, 3) if whole else 0.0
+    def rate(numerator: int, denominator: int) -> float:
+        return round(numerator / denominator, 3) if denominator else 0.0
 
     return {
         "total_calls": total,
-        "first_attempt_success": rate(first_attempt, len(terminal)),
-        "on_time_rate": rate(on_time_num, len(on_time_denom)),
+        "first_attempt_success": rate(len(first_attempt), len(terminal)),
+        "on_time_rate": rate(len(on_time_num), len(on_time_denom)),
         "active_deliveries": len(active),
         "at_risk": len(at_risk),
-        "containment_rate": rate(contained, total),
+        "containment_rate": rate(len(contained), total),
         "recovery_rate": rate(len(recovered), len(at_risk)),
         "avg_csat": round(sum(csats) / len(csats), 2) if csats else None,
         "avg_handle_time_seconds": round(sum(handle_times) / len(handle_times), 1) if handle_times else None,
