@@ -9,3 +9,6 @@ __pycache__/
 
 .superpowers/
 .playwright-mcp/
+
+# Claude Code worktrees
+.claude/worktrees/
