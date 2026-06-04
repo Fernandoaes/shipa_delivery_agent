@@ -17,7 +17,7 @@ export default function AgentStats({
       <div className="grid grid-cols-2 gap-3">
         {items.map((i) => (
           <div key={i.label}>
-            <div className="font-mono text-2xl font-semibold text-txt">{i.value}</div>
+            <div className="font-mono text-2xl font-semibold text-ok">{i.value}</div>
             <div className="text-xs text-txt-dim">{i.label}</div>
           </div>
         ))}

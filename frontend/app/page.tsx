@@ -14,7 +14,8 @@ function pct(n: number) {
   return `${Math.round(n * 100)}%`;
 }
 
-const WISMO = new Set(["track", "status", "wismo", "where_is_my_order", "tracking"]);
+// WISMO = "where is my order" tracking inquiries — the intents the agent deflects from human queues.
+const WISMO = new Set(["delivery_status", "not_received", "tracking", "track", "status", "wismo", "where_is_my_order"]);
 
 const RANGES: { label: string; days: number }[] = [
   { label: "1d", days: 1 },
