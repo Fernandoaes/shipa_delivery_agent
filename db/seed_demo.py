@@ -19,7 +19,7 @@ if not URL:
     sys.exit("No DATABASE_PUBLIC_URL / DATABASE_URL in environment")
 URL = URL.replace("postgresql+psycopg://", "postgresql://")
 
-N_CUST = 12
+N_CUST = 30
 
 CUSTOMERS_SQL = """
 WITH params AS (
@@ -50,7 +50,16 @@ ORDERS_SQL = """
 WITH cfg AS (
   SELECT
     ARRAY['Amazon','Temu','Trendyol','Noon','SHEIN','AliExpress','Namshi','Carrefour'] AS merchants,
-    ARRAY['pending','out_for_delivery','delivered','failed','rescheduled','returned','cancelled'] AS statuses,
+    -- Weighted toward delivered to reflect a healthy operation: ~72 pct delivered,
+    -- ~12 pct active (out_for_delivery/pending), small tail of exceptions the agent recovers.
+    ARRAY['delivered','delivered','delivered','delivered','delivered','delivered','delivered','delivered',
+          'delivered','delivered','delivered','delivered','delivered','delivered','delivered','delivered',
+          'delivered','delivered',
+          'out_for_delivery','out_for_delivery','out_for_delivery',
+          'pending',
+          'rescheduled',
+          'failed',
+          'returned'] AS statuses,
     ARRAY['Dubai Marina','Al Barsha','Business Bay','Deira','JLT','Downtown','JVC','Mirdif',
           'Silicon Oasis','Karama','Jumeirah','Palm Jumeirah','International City','Dubai Hills',
           'Al Majaz','Al Nahda','Muweilah','Al Khan',
@@ -112,16 +121,16 @@ SELECT gen_random_uuid(),
        CASE
          WHEN st.status IN ('failed','returned') THEN 2 + (gen.n %% 2)
          WHEN st.status = 'rescheduled' THEN 2
-         WHEN st.status = 'delivered' AND gen.n %% 6 = 0 THEN 2
+         WHEN st.status = 'delivered' AND gen.n %% 16 = 0 THEN 2
          ELSE 1
        END,
        -- delivered_at: set for delivered rows, derived from the window date
        CASE WHEN st.status = 'delivered'
             THEN (now()::date - (1 + gen.n %% 3)) + time '10:30' ELSE NULL END,
-       -- sla_due_at: promised deadline; ~88 pct of delivered land on/before it
+       -- sla_due_at: promised deadline; ~94 pct of delivered land on/before it
        CASE
          WHEN st.status = 'delivered'
-           THEN (now()::date - (1 + gen.n %% 3)) + CASE WHEN gen.n %% 8 = 0 THEN time '09:00' ELSE time '17:00' END
+           THEN (now()::date - (1 + gen.n %% 3)) + CASE WHEN gen.n %% 18 = 0 THEN time '09:00' ELSE time '17:00' END
          WHEN st.status IN ('out_for_delivery','rescheduled','failed','returned')
            THEN (now()::date + (gen.n %% 3)) + time '17:00'
          ELSE NULL
@@ -129,7 +138,8 @@ SELECT gen_random_uuid(),
 FROM gen
 CROSS JOIN cfg
 JOIN customers c ON c.twin_customer_ref = 'TWIN-CUST-D' || gen.g
-JOIN LATERAL (SELECT cfg.statuses[1 + (gen.n %% array_length(cfg.statuses, 1))] AS status) st ON true
+-- gen.n = g*100+s collapses to s under %% array_length; use (7g+s) so the weighted mix spreads.
+JOIN LATERAL (SELECT cfg.statuses[1 + ((gen.g * 7 + gen.s) %% array_length(cfg.statuses, 1))] AS status) st ON true
 JOIN LATERAL (
   SELECT cfg.areas[idx] AS area,
          cfg.lats[idx] AS lat, cfg.lngs[idx] AS lng,
@@ -141,9 +151,24 @@ ON CONFLICT (twin_order_ref) DO NOTHING;
 """
 
 
+# Clears the demo namespace (TWIN-D* / TWIN-CUST-D*) in FK-dependency order so the
+# seed is a true reset — ON CONFLICT DO NOTHING alone never re-applies a changed mix.
+# Mock namespace only; never touches real Twin refs.
+RESET_SQL = """
+DELETE FROM escalations    WHERE order_id IN (SELECT order_id FROM orders WHERE twin_order_ref LIKE 'TWIN-D%%');
+DELETE FROM reschedules     WHERE order_id IN (SELECT order_id FROM orders WHERE twin_order_ref LIKE 'TWIN-D%%');
+DELETE FROM investigations  WHERE order_id IN (SELECT order_id FROM orders WHERE twin_order_ref LIKE 'TWIN-D%%');
+DELETE FROM address_flags   WHERE order_id IN (SELECT order_id FROM orders WHERE twin_order_ref LIKE 'TWIN-D%%');
+DELETE FROM calls           WHERE order_id IN (SELECT order_id FROM orders WHERE twin_order_ref LIKE 'TWIN-D%%');
+DELETE FROM orders          WHERE twin_order_ref LIKE 'TWIN-D%%';
+DELETE FROM customers       WHERE twin_customer_ref LIKE 'TWIN-CUST-D%%';
+"""
+
+
 def main() -> None:
     with psycopg.connect(URL) as conn:
         with conn.cursor() as cur:
+            cur.execute(RESET_SQL)
             cur.execute(CUSTOMERS_SQL, {"n": N_CUST})
             cur.execute(ORDERS_SQL, {"n": N_CUST})
         conn.commit()
