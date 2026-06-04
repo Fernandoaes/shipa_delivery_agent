@@ -7,6 +7,39 @@ export const HUB: LatLng = [25.158, 55.236];
 
 const ACTIVE = new Set(["out_for_delivery", "pending"]);
 
+const COORD_EPSILON = 0.001; // ~100m; larger divergence means per-pickup coords, not a single HQ
+
+export type MerchantNode = {
+  merchant: string;
+  position: LatLng;
+  activeCount: number;
+  coordsDiverge: boolean;
+};
+
+// Derive one origin node per merchant by deduping active map points on the merchant name.
+export function buildMerchantNodes(points: MapPoint[]): MerchantNode[] {
+  const groups = new Map<string, MapPoint[]>();
+  for (const p of points) {
+    if (p.merchant_lat == null || p.merchant_lng == null) continue;
+    const g = groups.get(p.merchant);
+    if (g) g.push(p);
+    else groups.set(p.merchant, [p]);
+  }
+
+  const nodes: MerchantNode[] = [];
+  for (const [merchant, pts] of groups) {
+    const position: LatLng = [pts[0].merchant_lat as number, pts[0].merchant_lng as number];
+    const coordsDiverge = pts.some(
+      (p) =>
+        Math.abs((p.merchant_lat as number) - position[0]) > COORD_EPSILON ||
+        Math.abs((p.merchant_lng as number) - position[1]) > COORD_EPSILON,
+    );
+    const activeCount = pts.filter((p) => ACTIVE.has(p.status)).length;
+    nodes.push({ merchant, position, activeCount, coordsDiverge });
+  }
+  return nodes;
+}
+
 export function activeOrders(points: MapPoint[]): MapPoint[] {
   return points.filter((p) => ACTIVE.has(p.status));
 }
