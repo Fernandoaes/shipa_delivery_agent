@@ -37,6 +37,9 @@ class IngestOrder(_BlankToNone):
     merchant_lng: float | None = None
     delivery_lat: float | None = None
     delivery_lng: float | None = None
+    attempt_count: int | None = None
+    delivered_at: dt.datetime | None = None
+    sla_due_at: dt.datetime | None = None
 
 
 class IngestRequest(BaseModel):

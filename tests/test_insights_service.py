@@ -22,22 +22,25 @@ def _seed(db):
     return order
 
 
-def test_calls_per_day_is_zero_filled_for_window(db):
+def test_interactions_per_day_zero_filled_with_voice_channel(db):
     _seed(db)
     out = compute_insights(db)  # default 7-day window
-    assert len(out["calls_per_day"]) == 7
-    assert sum(d["count"] for d in out["calls_per_day"]) == 2
-    dates = [d["date"] for d in out["calls_per_day"]]
+    assert len(out["interactions_per_day"]) == 7
+    voice = sum(d["channels"].get("voice", 0) for d in out["interactions_per_day"])
+    assert voice == 2
+    dates = [d["date"] for d in out["interactions_per_day"]]
     assert dates == sorted(dates)
 
 
-def test_calls_per_day_respects_days_param(db):
-    _seed(db)  # one call now, one 3 days ago
-    assert len(compute_insights(db, days=30)["calls_per_day"]) == 30
-    one_day = compute_insights(db, days=1)
-    assert len(one_day["calls_per_day"]) == 1
-    # only the "now" call falls inside a 1-day window
-    assert sum(d["count"] for d in one_day["calls_per_day"]) == 1
+def test_interactions_include_fallback_messages(db):
+    order = _seed(db)
+    from app.models import FallbackMessage
+    db.add(FallbackMessage(order_id=order.order_id, channel="whatsapp", content_type="text",
+                           status="sent", sent_at=dt.datetime.now()))
+    db.flush()
+    out = compute_insights(db)
+    wa = sum(d["channels"].get("whatsapp", 0) for d in out["interactions_per_day"])
+    assert wa == 1
 
 
 def test_intent_and_disposition_mix(db):
@@ -49,22 +52,33 @@ def test_intent_and_disposition_mix(db):
     assert dispositions["unknown"] == 1  # the None disposition is labeled "unknown"
 
 
-def test_needs_attention_counts(db):
+def test_needs_attention_work_queue(db):
     order = _seed(db)
     call = db.query(Call).order_by(Call.started_at.desc()).first()
+    from app.models import AddressFlag, Investigation
     db.add(Escalation(call_id=call.call_id, order_id=order.order_id, category="dispute",
                       status="open", created_at=dt.datetime.now()))
-    db.add(Reschedule(call_id=call.call_id, order_id=order.order_id,
-                      requested_date=dt.date.today(), status="requested",
-                      synced_to_twin_at=None, created_at=dt.datetime.now()))
-    order.status = "failed"
+    db.add(Reschedule(call_id=call.call_id, order_id=order.order_id, requested_date=dt.date.today(),
+                      status="requested", synced_to_twin_at=None, created_at=dt.datetime.now()))
+    db.add(Investigation(call_id=call.call_id, order_id=order.order_id, type="missing_item",
+                         status="open", callback_due_at=dt.datetime.now() - dt.timedelta(hours=1),
+                         opened_at=dt.datetime.now()))
+    db.add(AddressFlag(call_id=call.call_id, order_id=order.order_id, original_address="x",
+                       correction_text="y", status="pending", created_at=dt.datetime.now()))
     db.flush()
-    out = compute_insights(db)  # default 7d window
-    assert out["needs_attention"]["open_escalations"] == 1
-    assert out["needs_attention"]["pending_reschedules"] == 1
-    # windowed by the related call's started_at: only TWIN-1001 has calls in-window.
-    # TWIN-1002 is failed in the mock but has no call, so it is not in the attention queue.
-    assert out["needs_attention"]["failed_orders"] == 1
+    na = compute_insights(db)["needs_attention"]
+    assert na["open_escalations"] == 1
+    assert na["overdue_callbacks"] == 1
+    assert na["pending_reschedules"] == 1
+    assert na["pending_address_flags"] == 1
+
+
+def test_failures_by_area(db):
+    _seed(db)
+    db.query(Order).filter_by(twin_order_ref="TWIN-1002").one().status = "failed"
+    db.flush()
+    areas = {a["area"]: a["count"] for a in compute_insights(db)["failures_by_area"]}
+    assert areas.get("Al Barsha") == 1
 
 
 def test_map_points_only_active_with_coords(db):

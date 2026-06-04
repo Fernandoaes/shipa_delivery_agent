@@ -47,6 +47,13 @@ def upsert_orders(db: Session, records: list[OrderRecord]) -> list[Order]:
         order.otp_code = rec.otp_code
         order.assigned_driver = rec.assigned_driver
         order.expected_pieces = rec.expected_pieces
+        if rec.attempt_count is not None:
+            order.attempt_count = rec.attempt_count
+        # Timestamps arrive when known; a partial sync must not wipe an existing value.
+        if rec.delivered_at is not None:
+            order.delivered_at = rec.delivered_at
+        if rec.sla_due_at is not None:
+            order.sla_due_at = rec.sla_due_at
         # Coords arrive out-of-band (geocode backfill); a sync without them must not wipe existing pins.
         if rec.merchant_lat is not None:
             order.merchant_lat = rec.merchant_lat

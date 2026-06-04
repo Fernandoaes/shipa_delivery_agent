@@ -26,6 +26,7 @@ export type InvestigationSummary = {
   investigation_id: string;
   call_id: string;
   order_id: string;
+  twin_order_ref: string | null;
   type: string;
   status: string;
   callback_due_at: string | null;
@@ -36,14 +37,19 @@ export type EscalationSummary = {
   escalation_id: string;
   call_id: string;
   category: string;
+  reason: string | null;
   status: string;
   created_at: string;
 };
 
 export type Metrics = {
   total_calls: number;
-  first_attempt_rate: number;
-  deflection_rate: number;
+  first_attempt_success: number;
+  on_time_rate: number;
+  active_deliveries: number;
+  at_risk: number;
+  containment_rate: number;
+  recovery_rate: number;
   avg_csat: number | null;
   avg_handle_time_seconds: number | null;
 };
@@ -57,11 +63,20 @@ export type MapPoint = {
   delivery_lng: number;
 };
 
+export type ChannelDay = { date: string; channels: Record<string, number> };
+export type AreaCount = { area: string; count: number };
+
 export type Insights = {
-  calls_per_day: { date: string; count: number }[];
+  interactions_per_day: ChannelDay[];
   intent_mix: { intent: string; count: number }[];
   disposition_mix: { disposition: string; count: number }[];
-  needs_attention: { open_escalations: number; pending_reschedules: number; failed_orders: number };
+  failures_by_area: AreaCount[];
+  needs_attention: {
+    open_escalations: number;
+    overdue_callbacks: number;
+    pending_reschedules: number;
+    pending_address_flags: number;
+  };
   map_points: MapPoint[];
 };
 

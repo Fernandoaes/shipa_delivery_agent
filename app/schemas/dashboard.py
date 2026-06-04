@@ -26,6 +26,7 @@ class InvestigationSummary(BaseModel):
     investigation_id: uuid.UUID
     call_id: uuid.UUID
     order_id: uuid.UUID
+    twin_order_ref: str | None = None
     type: str
     status: str
     callback_due_at: dt.datetime | None
@@ -47,6 +48,7 @@ class EscalationSummary(BaseModel):
     escalation_id: uuid.UUID
     call_id: uuid.UUID
     category: str
+    reason: str | None = None
     status: str
     created_at: dt.datetime
     model_config = {"from_attributes": True}
@@ -86,8 +88,12 @@ class FallbackMessageSummary(BaseModel):
 
 class Metrics(BaseModel):
     total_calls: int
-    first_attempt_rate: float
-    deflection_rate: float
+    first_attempt_success: float
+    on_time_rate: float
+    active_deliveries: int
+    at_risk: int
+    containment_rate: float
+    recovery_rate: float
     avg_csat: float | None
     avg_handle_time_seconds: float | None
 
@@ -150,11 +156,6 @@ class CustomerDetail(BaseModel):
     needs_follow_up: bool
 
 
-class DayCount(BaseModel):
-    date: dt.date
-    count: int
-
-
 class IntentCount(BaseModel):
     intent: str
     count: int
@@ -165,10 +166,21 @@ class DispositionCount(BaseModel):
     count: int
 
 
+class ChannelDay(BaseModel):
+    date: dt.date
+    channels: dict[str, int]
+
+
+class AreaCount(BaseModel):
+    area: str
+    count: int
+
+
 class NeedsAttention(BaseModel):
     open_escalations: int
+    overdue_callbacks: int
     pending_reschedules: int
-    failed_orders: int
+    pending_address_flags: int
 
 
 class MapPoint(BaseModel):
@@ -181,8 +193,9 @@ class MapPoint(BaseModel):
 
 
 class Insights(BaseModel):
-    calls_per_day: list[DayCount]
+    interactions_per_day: list[ChannelDay]
     intent_mix: list[IntentCount]
     disposition_mix: list[DispositionCount]
+    failures_by_area: list[AreaCount]
     needs_attention: NeedsAttention
     map_points: list[MapPoint]

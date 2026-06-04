@@ -1,4 +1,4 @@
-export type Bar = { label: string; value: number };
+export type Bar = { label: string; value: number; accent?: boolean };
 
 export default function BarChart({
   title, data, orientation = "vertical",
@@ -12,7 +12,7 @@ export default function BarChart({
           {data.map((d) => (
             <div key={d.label} className="flex h-full flex-1 flex-col items-center gap-1" title={`${d.label}: ${d.value}`}>
               <div className="flex w-full flex-1 items-end">
-                <div className="w-full rounded-t bg-shipa-blue" style={{ height: `${(d.value / max) * 100}%` }} />
+                <div className={`w-full rounded-t ${d.accent ? "bg-warn" : "bg-shipa-blue"}`} style={{ height: `${(d.value / max) * 100}%` }} />
               </div>
               <div className="text-[10px] text-txt-faint">{d.label}</div>
             </div>
@@ -24,7 +24,7 @@ export default function BarChart({
             <div key={d.label} className="flex items-center gap-2 text-sm">
               <div className="w-28 truncate text-txt-dim" title={d.label}>{d.label}</div>
               <div className="h-4 flex-1 rounded bg-panel-2">
-                <div className="h-4 rounded bg-shipa-blue" style={{ width: `${(d.value / max) * 100}%` }} />
+                <div className={`h-4 rounded ${d.accent ? "bg-warn" : "bg-shipa-blue"}`} style={{ width: `${(d.value / max) * 100}%` }} />
               </div>
               <div className="w-8 text-right text-txt-dim">{d.value}</div>
             </div>
