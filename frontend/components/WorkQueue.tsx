@@ -12,7 +12,7 @@ export default function WorkQueue({
     { label: "Open escalations", value: openEscalations, href: "/escalations?status=open" },
     { label: "Overdue callbacks", value: overdueCallbacks, href: "/investigations?overdue=1" },
     { label: "Unsynced reschedules", value: pendingReschedules, href: "/reschedules" },
-    { label: "Pending address flags", value: pendingAddressFlags, href: "/orders?status=failed" },
+    { label: "Pending address flags", value: pendingAddressFlags, href: "/orders" },
   ];
   return (
     <div className="rounded-xl border border-hairline bg-panel p-4">

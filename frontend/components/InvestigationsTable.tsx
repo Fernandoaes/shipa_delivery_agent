@@ -35,7 +35,7 @@ export default function InvestigationsTable({ rows: data, renderTime }: { rows: 
         <FilterSelect value={get("status")} onChange={(v) => set("status", v)} options={optionsFor(data, "status")} allLabel="All statuses" />
         <FilterSelect value={get("type")} onChange={(v) => set("type", v)} options={optionsFor(data, "type")} allLabel="All types" />
         <label className="flex items-center gap-2 text-sm text-txt-dim">
-          <input type="checkbox" checked={overdue} onChange={(e) => set("overdue", e.target.checked ? "1" : "")} />
+          <input type="checkbox" aria-label="Show overdue only" checked={overdue} onChange={(e) => set("overdue", e.target.checked ? "1" : "")} />
           Overdue only
         </label>
         <span className="text-sm text-txt-dim">{rows.length} of {data.length}</span>

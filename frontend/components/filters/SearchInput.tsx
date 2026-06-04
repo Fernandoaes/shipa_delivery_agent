@@ -11,6 +11,7 @@ export default function SearchInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? "Search…"}
+      aria-label={placeholder ?? "Search"}
       className="w-64 rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm text-txt placeholder:text-txt-faint"
     />
   );

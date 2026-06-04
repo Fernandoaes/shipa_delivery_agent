@@ -32,6 +32,7 @@ export default function EscalationsTable({ rows: data }: { rows: EscalationSumma
           <thead className="bg-panel-2 text-txt-dim">
             <tr>
               <th className="px-4 py-3 font-semibold">Category</th>
+              <th className="px-4 py-3 font-semibold">Reason</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Created</th>
             </tr>
@@ -40,6 +41,7 @@ export default function EscalationsTable({ rows: data }: { rows: EscalationSumma
             {rows.map((r) => (
               <tr key={r.escalation_id} className="border-t border-hairline hover:bg-panel-2">
                 <td className="px-4 py-3">{r.category}</td>
+                <td className="px-4 py-3">{r.reason ?? "—"}</td>
                 <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 <td className="px-4 py-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</td>
               </tr>
