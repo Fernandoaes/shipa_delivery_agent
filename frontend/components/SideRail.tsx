@@ -22,7 +22,7 @@ export default function SideRail() {
   return (
     <aside className="fixed left-0 top-0 z-[1100] flex h-screen w-16 flex-col items-center gap-1 border-r border-hairline bg-panel py-4">
       <Link href="/" className="mb-4 grid h-10 w-10 place-items-center rounded-lg bg-shipa-blue" aria-label="SHIPA home">
-        <Image src="/shipa-logo.svg" alt="SHIPA" width={22} height={22} priority />
+        <Image src="/shipa-mark.svg" alt="SHIPA" width={24} height={24} priority />
       </Link>
       <nav className="flex flex-1 flex-col items-center gap-1">
         {links.map(({ href, label, Icon }) => {
