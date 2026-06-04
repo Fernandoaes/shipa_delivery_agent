@@ -101,19 +101,42 @@ New shape for `interactions_per_day`: `[{ date, channels: { voice: int, sms: int
 
 WISMO highlight: intent values matching where-is-my-order (e.g. `track`/`status`/`wismo` — confirm against seeded intent vocabulary) rendered in an accent color.
 
-## 6. Out of scope (YAGNI)
+## 6. List filters / lookups (Customers, Escalations, Investigations, Orders)
+
+Each list page gets full filter + free-text lookup. **Client-side, URL-synced** — pages already fetch full lists, so filtering needs no backend query params; syncing state to the URL (`?status=failed&area=Deira`) makes filtered views bookmarkable and lets the dashboard **Work Queue rows deep-link into a pre-filtered list** (e.g. overdue callbacks → `/investigations?overdue=1`). Server-side query params are the scale-up path, out of scope for the pilot.
+
+**Shared primitives** (new, `frontend/components/`):
+- `SearchInput` — debounced free-text.
+- `FilterSelect` — dropdown; options derived from the fetched rows.
+- `useTableFilters` hook — text match across configured fields + equality filters + URL read/write (`useSearchParams`/`useRouter`). Each table shows a live result count + "no match" empty state.
+
+Each page renders a thin `"use client"` table wrapper using these. `OrdersTable` refactors onto the shared primitives; add `CustomersTable`, `EscalationsTable`, `InvestigationsTable`.
+
+| page | text search | dropdown filters | special |
+|---|---|---|---|
+| **Orders** | ref · customer · merchant | status · area · merchant · driver | extends current dropdown |
+| **Customers** | name · phone | language | sort by order count |
+| **Escalations** | category · reason | status · category | — |
+| **Investigations** | order ref | status · type | **Overdue only** toggle (`callback_due_at < now`) |
+
+**Schema additions for searchable fields** (`app/schemas/dashboard.py`):
+- `EscalationSummary` — add `reason: str \| null` (already on the model).
+- `InvestigationSummary` — add `twin_order_ref: str \| null` (resolve via the linked `Order`) so investigations are searchable/displayable by order ref instead of a truncated UUID.
+
+## 7. Out of scope (YAGNI)
 
 - **$ / hours-saved** ROI metrics (need a cost-per-call config) — deferred to a future QBR/review view, not the daily ops dashboard.
 - Driver-level performance, merchant scorecards, multi-channel **inbound** (pilot inbound is voice; only `FallbackMessage` adds non-voice events).
 - True SLA on investigations beyond the overdue-callback count.
 
-## 7. Testing
+## 8. Testing
 
 - Backend: unit tests for each new metric in `app/services/metrics.py` and `app/services/insights.py` against a seeded session — first-attempt, on-time (incl. null `sla_due_at` exclusion), recovery, at-risk, stacked interactions, overdue callbacks, failures-by-area. Zero-denominator cases.
 - Migration: upgrade/downgrade runs clean; existing rows backfill to `attempt_count=1`.
 - Frontend gate (per project convention): `tsc` + `eslint` + `next build`. (No FE test harness; backend httpx/TestClient suite has a known pre-existing failure unrelated to this work.)
+- Filters: the `EscalationSummary.reason` / `InvestigationSummary.twin_order_ref` schema additions are covered by the existing serialization tests; manually verify URL-synced filters round-trip (set filter → URL updates → reload restores state) and that a Work Queue deep-link lands pre-filtered.
 
-## 8. Risks / notes
+## 9. Risks / notes
 
 - `delivered_at`/`sla_due_at` are demo-seeded for the pilot; in production they must flow from the Twin/ops system via ingest. The schema is ready; populating them is an integration task.
 - Stacked interactions conflate inbound voice with outbound fallback messages — label the chart "Interactions (voice + messages)" so it isn't read as inbound-only volume.
