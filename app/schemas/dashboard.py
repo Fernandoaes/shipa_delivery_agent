@@ -86,8 +86,12 @@ class FallbackMessageSummary(BaseModel):
 
 class Metrics(BaseModel):
     total_calls: int
-    first_attempt_rate: float
-    deflection_rate: float
+    first_attempt_success: float
+    on_time_rate: float
+    active_deliveries: int
+    at_risk: int
+    containment_rate: float
+    recovery_rate: float
     avg_csat: float | None
     avg_handle_time_seconds: float | None
 

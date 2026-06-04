@@ -42,5 +42,6 @@ def test_metrics_shape(client, with_activity):
     r = client.get("/metrics", headers=APIKEY)
     assert r.status_code == 200
     body = r.json()
-    for key in ("total_calls", "first_attempt_rate", "deflection_rate", "avg_csat", "avg_handle_time_seconds"):
+    for key in ("total_calls", "first_attempt_success", "on_time_rate", "active_deliveries",
+                "at_risk", "containment_rate", "recovery_rate", "avg_csat", "avg_handle_time_seconds"):
         assert key in body
