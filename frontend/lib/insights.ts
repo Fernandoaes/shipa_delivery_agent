@@ -1,18 +1,9 @@
-import type { Insights, MapPoint, OrderListItem } from "@/lib/types";
+import type { MapPoint, OrderListItem } from "@/lib/types";
 
 export type LatLng = [number, number];
 
 // Al Quoz fulfilment hub (matches seed origin) — shared across map + routing helpers.
 export const HUB: LatLng = [25.158, 55.236];
-
-export type RiskLevel = "LOW" | "MED" | "HIGH";
-
-// Network risk derived from real operational signals (no fabricated metric).
-export function networkRisk(na: Insights["needs_attention"]): RiskLevel {
-  if (na.open_escalations > 0 || na.failed_orders >= 2) return "HIGH";
-  if (na.failed_orders > 0 || na.pending_reschedules > 0) return "MED";
-  return "LOW";
-}
 
 const ACTIVE = new Set(["out_for_delivery", "pending"]);
 
