@@ -19,7 +19,7 @@ export default function StackedBarChart({ title, data }: { title: string; data: 
       <h2 className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-txt-faint">{title}</h2>
       <div className="flex h-40 items-end gap-1">
         {data.map((d) => (
-          <div key={d.date} className="flex flex-1 flex-col-reverse" title={d.date}>
+          <div key={d.date} className="flex h-full flex-1 flex-col-reverse" title={d.date}>
             {channels.map((c) => {
               const v = d.channels[c] ?? 0;
               return v ? (
