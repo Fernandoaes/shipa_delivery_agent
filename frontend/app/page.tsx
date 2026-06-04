@@ -70,7 +70,7 @@ export default async function CommandCenter({
         <KpiStat label="First-Attempt Success" value={pct(metrics.first_attempt_success)} sub="delivered on attempt 1" tone="ok" Icon={Activity} />
         <KpiStat label="On-Time Rate" value={pct(metrics.on_time_rate)} sub="within promised window" tone="ok" Icon={TrendingUp} />
         <KpiStat label="Active Deliveries" value={metrics.active_deliveries.toString()} sub="out for delivery" Icon={Package} />
-        <KpiStat label="At-Risk" value={metrics.at_risk.toString()} sub="failed / returned" tone={metrics.at_risk > 0 ? "bad" : "ok"} Icon={TriangleAlert} />
+        <KpiStat label="At-Risk" value={metrics.at_risk.toString()} sub="failed / returned" tone={metrics.at_risk > 0 ? "bad" : "ok"} Icon={TriangleAlert} href="/orders?risk=1" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
