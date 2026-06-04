@@ -65,7 +65,7 @@ export default function CallsTable({ calls }: { calls: CallSummary[] }) {
 
       {selected && (
         <div className="fixed inset-0 z-20 flex justify-end bg-black/50 backdrop-blur-sm" onClick={() => setSelected(null)}>
-          <aside className="h-full w-[26rem] overflow-y-auto border-l border-hairline bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <aside className="h-full w-[34rem] max-w-[90vw] overflow-y-auto border-l border-hairline bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between border-b border-hairline px-6 py-5">
               <div>
                 <p className="text-xs uppercase tracking-wide text-txt-faint">Call detail</p>
