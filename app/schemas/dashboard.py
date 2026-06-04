@@ -1,7 +1,7 @@
 import datetime as dt
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CallSummary(BaseModel):
@@ -47,6 +47,8 @@ class RescheduleSummary(BaseModel):
 class EscalationSummary(BaseModel):
     escalation_id: uuid.UUID
     call_id: uuid.UUID
+    order_id: uuid.UUID | None = None
+    twin_order_ref: str | None = None
     category: str
     reason: str | None = None
     status: str
@@ -115,6 +117,8 @@ class OrderListItem(BaseModel):
     delivery_window: str | None
     assigned_driver: str | None
     customer_name: str
+    attempt_count: int = 1
+    issue: str | None = None
 
 
 class OrderDetail(BaseModel):
@@ -127,12 +131,20 @@ class OrderDetail(BaseModel):
     delivery_window: str | None
     assigned_driver: str | None
     expected_pieces: int | None
+    attempt_count: int
+    delivered_at: dt.datetime | None
+    sla_due_at: dt.datetime | None
     merchant_lat: float | None
     merchant_lng: float | None
     delivery_lat: float | None
     delivery_lng: float | None
     last_synced_at: dt.datetime
     customer: CustomerBrief
+    calls: list[CallSummary] = Field(default_factory=list)
+    escalations: list[EscalationSummary] = Field(default_factory=list)
+    investigations: list[InvestigationSummary] = Field(default_factory=list)
+    reschedules: list[RescheduleSummary] = Field(default_factory=list)
+    address_flags: list[AddressFlagSummary] = Field(default_factory=list)
     # deliberately no otp_code
 
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 import FilterSelect from "@/components/filters/FilterSelect";
 import SearchInput from "@/components/filters/SearchInput";
@@ -31,6 +32,7 @@ export default function EscalationsTable({ rows: data }: { rows: EscalationSumma
         <table className="w-full text-left text-sm">
           <thead className="bg-panel-2 text-txt-dim">
             <tr>
+              <th className="px-4 py-3 font-semibold">Order</th>
               <th className="px-4 py-3 font-semibold">Category</th>
               <th className="px-4 py-3 font-semibold">Reason</th>
               <th className="px-4 py-3 font-semibold">Status</th>
@@ -40,6 +42,15 @@ export default function EscalationsTable({ rows: data }: { rows: EscalationSumma
           <tbody>
             {rows.map((r) => (
               <tr key={r.escalation_id} className="border-t border-hairline hover:bg-panel-2">
+                <td className="px-4 py-3">
+                  {r.order_id ? (
+                    <Link href={`/orders/${r.order_id}`} className="font-medium text-shipa-blue hover:underline">
+                      {r.twin_order_ref ?? "view order"}
+                    </Link>
+                  ) : (
+                    <span className="text-txt-faint">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">{r.category}</td>
                 <td className="px-4 py-3">{r.reason ?? "—"}</td>
                 <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
