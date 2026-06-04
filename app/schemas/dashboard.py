@@ -26,6 +26,7 @@ class InvestigationSummary(BaseModel):
     investigation_id: uuid.UUID
     call_id: uuid.UUID
     order_id: uuid.UUID
+    twin_order_ref: str | None = None
     type: str
     status: str
     callback_due_at: dt.datetime | None
@@ -47,6 +48,7 @@ class EscalationSummary(BaseModel):
     escalation_id: uuid.UUID
     call_id: uuid.UUID
     category: str
+    reason: str | None = None
     status: str
     created_at: dt.datetime
     model_config = {"from_attributes": True}

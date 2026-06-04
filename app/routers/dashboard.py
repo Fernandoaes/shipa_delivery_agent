@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_db, require_api_key
 from app.models import (
-    AddressFlag, Escalation, FallbackMessage, Investigation, MerchantReferral, Reschedule,
+    AddressFlag, Escalation, FallbackMessage, Investigation, MerchantReferral, Order, Reschedule,
 )
 from app.schemas.dashboard import (
     AddressFlagSummary, CallSummary, CustomerDetail, CustomerListItem, EscalationSummary,
@@ -28,7 +28,16 @@ def list_calls(db: Session = Depends(get_db)):
 
 @router.get("/investigations", response_model=list[InvestigationSummary])
 def list_investigations(db: Session = Depends(get_db)):
-    return db.query(Investigation).order_by(Investigation.opened_at.desc()).all()
+    rows = db.query(Investigation).order_by(Investigation.opened_at.desc()).all()
+    refs = dict(db.query(Order.order_id, Order.twin_order_ref).all())
+    return [
+        InvestigationSummary(
+            investigation_id=r.investigation_id, call_id=r.call_id, order_id=r.order_id,
+            type=r.type, status=r.status, callback_due_at=r.callback_due_at,
+            opened_at=r.opened_at, twin_order_ref=refs.get(r.order_id),
+        )
+        for r in rows
+    ]
 
 
 @router.get("/reschedules", response_model=list[RescheduleSummary])
