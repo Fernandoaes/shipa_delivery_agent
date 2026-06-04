@@ -3,8 +3,8 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.models import Call, Customer, Order
-from app.schemas.dashboard import CallSummary
+from app.models import Call, Customer, Order, Reschedule
+from app.schemas.dashboard import CallSummary, RescheduleBrief
 from app.security import scrub_otp
 
 
@@ -34,7 +34,12 @@ def get_or_create_call(
     return call
 
 
-def _call_summary(call: Call, customer_name: str | None, twin_order_ref: str | None) -> CallSummary:
+def _call_summary(
+    call: Call,
+    customer_name: str | None,
+    twin_order_ref: str | None,
+    reschedule: Reschedule | None = None,
+) -> CallSummary:
     return CallSummary(
         call_id=call.call_id,
         order_id=call.order_id,
@@ -48,6 +53,9 @@ def _call_summary(call: Call, customer_name: str | None, twin_order_ref: str | N
         ended_at=call.ended_at,
         customer_name=customer_name,
         twin_order_ref=twin_order_ref,
+        caller_number=call.caller_number,
+        notes=call.notes,
+        reschedule=RescheduleBrief.model_validate(reschedule) if reschedule else None,
     )
 
 
@@ -59,7 +67,8 @@ def list_calls(db: Session) -> list[CallSummary]:
         .order_by(Call.started_at.desc())
         .all()
     )
-    return [_call_summary(call, name, ref) for call, name, ref in rows]
+    reschedules = {r.call_id: r for r in db.query(Reschedule).all()}
+    return [_call_summary(call, name, ref, reschedules.get(call.call_id)) for call, name, ref in rows]
 
 
 def get_call(db: Session, call_id: uuid.UUID) -> Call | None:

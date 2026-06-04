@@ -65,37 +65,84 @@ export default function CallsTable({ calls }: { calls: CallSummary[] }) {
 
       {selected && (
         <div className="fixed inset-0 z-20 flex justify-end bg-black/50 backdrop-blur-sm" onClick={() => setSelected(null)}>
-          <aside className="h-full w-96 overflow-y-auto border-l border-hairline bg-panel p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-txt">Call detail</h2>
-              <button onClick={() => setSelected(null)} className="text-txt-faint hover:text-txt">✕</button>
+          <aside className="h-full w-[26rem] overflow-y-auto border-l border-hairline bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between border-b border-hairline px-6 py-5">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-txt-faint">Call detail</p>
+                <h2 className="mt-1 text-xl font-bold text-txt">{selected.customer_name ?? "Unknown caller"}</h2>
+                <p className="mt-1 text-sm text-txt-dim">
+                  {new Date(selected.started_at).toLocaleString()} · {selected.direction}
+                </p>
+              </div>
+              <button onClick={() => setSelected(null)} className="text-lg text-txt-faint hover:text-txt">✕</button>
             </div>
-            <dl className="divide-y divide-hairline text-sm">
-              {([
-                ["When", new Date(selected.started_at).toLocaleString()],
-                ["Ended", selected.ended_at ? new Date(selected.ended_at).toLocaleString() : "—"],
-                ["Customer", selected.customer_name ?? "—"],
-                ["Direction", selected.direction],
-                ["Language", selected.language ?? "—"],
-                ["Verification", selected.verification_status],
-                ["Intent", selected.intent ?? "—"],
-                ["Disposition", selected.disposition ?? "—"],
-                ["CSAT", selected.csat_score?.toString() ?? "—"],
-              ] as [string, string][]).map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4 py-2.5">
-                  <dt className="text-txt-dim">{k}</dt>
-                  <dd className="text-right font-medium text-txt">{v}</dd>
+
+            <div className="space-y-6 px-6 py-5">
+              <Section title="Call">
+                <Fact label="Intent" value={selected.intent ?? "—"} />
+                <Fact label="Disposition">
+                  {selected.disposition ? <StatusBadge status={selected.disposition} /> : "—"}
+                </Fact>
+                <Fact label="Verification">
+                  <StatusBadge status={selected.verification_status} />
+                </Fact>
+                <Fact label="CSAT" value={selected.csat_score?.toString() ?? "—"} />
+                <Fact label="Language" value={selected.language ?? "—"} />
+                <Fact label="Caller" value={selected.caller_number ?? "—"} />
+                <Fact label="Ended" value={selected.ended_at ? new Date(selected.ended_at).toLocaleString() : "—"} />
+              </Section>
+
+              {selected.reschedule && (
+                <Section title="Reschedule" accent>
+                  <Fact label="Requested" value={new Date(selected.reschedule.requested_date).toLocaleDateString()} />
+                  <Fact label="Window" value={selected.reschedule.requested_window ?? "—"} />
+                  <Fact label="Reason" value={selected.reschedule.reason ?? "—"} />
+                  <Fact label="Status">
+                    <StatusBadge status={selected.reschedule.status} />
+                  </Fact>
+                  <Fact
+                    label="Synced to Twin"
+                    value={selected.reschedule.synced_to_twin_at ? new Date(selected.reschedule.synced_to_twin_at).toLocaleString() : "pending"}
+                  />
+                </Section>
+              )}
+
+              {selected.notes && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-txt-faint">Notes</p>
+                  <p className="whitespace-pre-wrap rounded-lg border border-hairline bg-panel-2 p-3 text-sm leading-relaxed text-txt">
+                    {selected.notes}
+                  </p>
                 </div>
-              ))}
-            </dl>
-            {selected.order_id && (
-              <Link href={`/orders/${selected.order_id}`} className="mt-4 inline-block text-sm text-shipa-blue hover:underline">
-                Order {selected.twin_order_ref ?? "detail"} →
-              </Link>
-            )}
+              )}
+
+              {selected.order_id && (
+                <Link href={`/orders/${selected.order_id}`} className="inline-block text-sm font-medium text-shipa-blue hover:underline">
+                  Order {selected.twin_order_ref ?? "detail"} →
+                </Link>
+              )}
+            </div>
           </aside>
         </div>
       )}
+    </div>
+  );
+}
+
+function Section({ title, accent, children }: { title: string; accent?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={accent ? "rounded-lg border-l-2 border-warn bg-panel-2 p-4" : ""}>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-txt-faint">{title}</p>
+      <dl className="divide-y divide-hairline text-sm">{children}</dl>
+    </div>
+  );
+}
+
+function Fact({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-2.5">
+      <dt className="text-txt-dim">{label}</dt>
+      <dd className="text-right font-medium text-txt">{children ?? value}</dd>
     </div>
   );
 }

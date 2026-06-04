@@ -4,6 +4,15 @@ import uuid
 from pydantic import BaseModel
 
 
+class RescheduleBrief(BaseModel):
+    requested_date: dt.date
+    requested_window: str | None
+    reason: str | None
+    status: str
+    synced_to_twin_at: dt.datetime | None
+    model_config = {"from_attributes": True}
+
+
 class CallSummary(BaseModel):
     call_id: uuid.UUID
     order_id: uuid.UUID | None = None
@@ -17,7 +26,10 @@ class CallSummary(BaseModel):
     ended_at: dt.datetime | None
     customer_name: str | None = None
     twin_order_ref: str | None = None
-    # deliberately no transcript / otp / raw caller PII beyond what ops needs
+    caller_number: str | None = None
+    notes: str | None = None
+    reschedule: RescheduleBrief | None = None
+    # transcript / recording_url / otp stay out
 
     model_config = {"from_attributes": True}
 
