@@ -29,7 +29,10 @@ def list_calls(db: Session = Depends(get_db)):
 @router.get("/investigations", response_model=list[InvestigationSummary])
 def list_investigations(db: Session = Depends(get_db)):
     rows = db.query(Investigation).order_by(Investigation.opened_at.desc()).all()
-    refs = dict(db.query(Order.order_id, Order.twin_order_ref).all())
+    order_ids = {r.order_id for r in rows}
+    refs = dict(
+        db.query(Order.order_id, Order.twin_order_ref).filter(Order.order_id.in_(order_ids)).all()
+    )
     return [
         InvestigationSummary(
             investigation_id=r.investigation_id, call_id=r.call_id, order_id=r.order_id,
