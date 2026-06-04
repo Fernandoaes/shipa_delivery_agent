@@ -61,6 +61,9 @@ export type MapPoint = {
   delivery_area: string | null;
   delivery_lat: number;
   delivery_lng: number;
+  merchant: string;
+  merchant_lat: number | null;
+  merchant_lng: number | null;
 };
 
 export type ChannelDay = { date: string; channels: Record<string, number> };
