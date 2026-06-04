@@ -71,11 +71,3 @@ body {
   50% { opacity: 0.35; }
 }
 .live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
-
-@keyframes cc-flow {
-  to { stroke-dashoffset: -22; }
-}
-.cc-flow { animation: cc-flow 1.1s linear infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .cc-flow { animation: none; }
-}

@@ -1,9 +1,9 @@
 // Translucent status pills tuned for the dark theme.
 const STYLES: Record<string, string> = {
   delivered: "bg-ok/15 text-ok",
-  out_for_delivery: "bg-[#3b82f6]/15 text-[#7eb0ff]",
+  out_for_delivery: "bg-ok/15 text-ok", // green = in motion / on track
   failed: "bg-bad/15 text-[#ff8585]",
-  pending: "bg-ok/15 text-ok",
+  pending: "bg-[#3b82f6]/15 text-[#7eb0ff]", // blue = queued / waiting
   rescheduled: "bg-warn/15 text-warn",
   returned: "bg-muted/15 text-muted",
   cancelled: "bg-muted/15 text-muted",

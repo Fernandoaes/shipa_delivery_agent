@@ -118,8 +118,6 @@ export default function CommandMap({ points, drivers = [], height = "68vh" }: Co
               color: d.atRisk ? "#f59e0b" : "#22d3ee",
               weight: 2.5,
               opacity: 0.7,
-              dashArray: "1 10",
-              className: "cc-flow",
             }}
           />
         ))}
@@ -130,7 +128,7 @@ export default function CommandMap({ points, drivers = [], height = "68vh" }: Co
             <Polyline
               key={`inbound-${m.merchant}`}
               positions={[m.position, HUB]}
-              pathOptions={{ color: MERCHANT_COLOR, weight: 1.5, opacity: 0.35, dashArray: "6 8" }}
+              pathOptions={{ color: MERCHANT_COLOR, weight: 1.5, opacity: 0.45 }}
             />
           ))}
 

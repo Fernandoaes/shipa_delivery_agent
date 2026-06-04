@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { MapPoint } from "@/lib/types";
 
 const DOT: Record<string, string> = {
-  out_for_delivery: "bg-[#3b82f6]",
-  pending: "bg-ok",
+  out_for_delivery: "bg-ok", // green = in motion / on track
+  pending: "bg-[#3b82f6]", // blue = queued / waiting
   failed: "bg-bad",
   rescheduled: "bg-warn",
 };
