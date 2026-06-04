@@ -154,11 +154,6 @@ class CustomerDetail(BaseModel):
     needs_follow_up: bool
 
 
-class DayCount(BaseModel):
-    date: dt.date
-    count: int
-
-
 class IntentCount(BaseModel):
     intent: str
     count: int
