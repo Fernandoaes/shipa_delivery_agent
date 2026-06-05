@@ -12,3 +12,4 @@ __pycache__/
 
 # Claude Code worktrees
 .claude/worktrees/
+CLAUDE.local.md

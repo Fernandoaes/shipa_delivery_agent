@@ -95,7 +95,10 @@ def upsert_calls(db: Session, items) -> list[Call]:
         call.agent_type = item.agent_type
         call.caller_number = item.caller_number
         call.language = item.language
-        call.verification_status = item.verification_status
+        # Only overwrite a live-set status if the sync payload carries a real value;
+        # the schema default "not_started" must not clobber "passed"/"partial"/"failed".
+        if item.verification_status != "not_started" or call.verification_status == "not_started":
+            call.verification_status = item.verification_status
         call.intent = item.intent
         call.disposition = item.disposition
         call.csat_score = item.csat_score
